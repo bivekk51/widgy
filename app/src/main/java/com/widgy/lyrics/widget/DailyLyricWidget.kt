@@ -247,8 +247,8 @@ private fun WidgetContent(context: Context, dailyLyric: DailyLyric?, config: Wid
         ) {
             Box(
                 modifier = GlanceModifier
-                    .width(48.dp)
-                    .height(48.dp)
+                    .width(52.dp)
+                    .height(52.dp)
                     .clickable(actionRunCallback<RefreshLyricActionCallback>()),
                 contentAlignment = Alignment.Center
             ) {
@@ -262,7 +262,7 @@ private fun WidgetContent(context: Context, dailyLyric: DailyLyric?, config: Wid
                                 else -> Color(0x88FFFFFF)
                             }
                         ),
-                        fontSize = 18.sp,
+                        fontSize = 20.sp,
                         fontWeight = FontWeight.Bold
                     )
                 )
@@ -283,6 +283,7 @@ class RefreshLyricActionCallback : ActionCallback {
         if (newLyric != null) {
             WidgetPreferences(context).saveCachedLyric(newLyric)
         }
+        DailyLyricWidget().update(context, glanceId)
         WidgetUpdateManager.updateAllWidgets(context)
     }
 }
