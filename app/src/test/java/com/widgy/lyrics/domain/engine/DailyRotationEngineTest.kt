@@ -83,4 +83,26 @@ class DailyRotationEngineTest {
         val candidates = engine.buildCandidatePool()
         assertEquals(2, candidates.size)
     }
+
+    @Test
+    fun resolveDailyLyric_forceRefresh_singleSongWithLyrics_updatesStoredHistory() = runBlocking {
+        val multilineLyrics = """
+            Line 1: Promise that you will sing about me
+            Line 2: When I am gone
+            Line 3: Promise you will remember me
+            Line 4: Dying of thirst
+        """.trimIndent()
+        db.songDao().insertSong(
+            SongEntity(title = "Sing About Me", artist = "Kendrick Lamar", plainLyrics = multilineLyrics, isRandomPool = true)
+        )
+
+        val firstLyric = engine.resolveDailyLyric(LocalDate.of(2026, 11, 5), forceRefresh = false)
+        assertNotNull(firstLyric)
+
+        val refreshed = engine.resolveDailyLyric(LocalDate.of(2026, 11, 5), forceRefresh = true)
+        assertNotNull(refreshed)
+
+        val stored = db.dailyHistoryDao().getDailyLyric("2026-11-05")
+        assertEquals(refreshed?.text, stored?.lyricText)
+    }
 }

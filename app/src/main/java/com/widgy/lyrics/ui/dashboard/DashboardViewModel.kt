@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.widgy.lyrics.data.db.SongWithSnippets
+import com.widgy.lyrics.data.preferences.WidgetConfig
+import com.widgy.lyrics.data.preferences.WidgetPreferences
 import com.widgy.lyrics.data.repository.LyricsRepository
 import com.widgy.lyrics.domain.model.DailyLyric
 import com.widgy.lyrics.widget.WidgetUpdateManager
@@ -18,15 +20,21 @@ import kotlinx.coroutines.launch
 data class DashboardUiState(
     val todayLyric: DailyLyric? = null,
     val savedSongs: List<SongWithSnippets> = emptyList(),
+    val widgetConfig: WidgetConfig = WidgetConfig(),
     val isRefreshingLyric: Boolean = false,
     val isLoading: Boolean = false
 )
 
 class DashboardViewModel(
-    private val repository: LyricsRepository
+    private val repository: LyricsRepository,
+    context: Context? = null
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(DashboardUiState())
+    private val _uiState = MutableStateFlow(
+        DashboardUiState(
+            widgetConfig = context?.let { WidgetPreferences(it).getConfig() } ?: WidgetConfig()
+        )
+    )
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
 
     init {
@@ -51,6 +59,14 @@ class DashboardViewModel(
             val newLyric = repository.refreshTodayLyric()
             _uiState.update { it.copy(todayLyric = newLyric, isRefreshingLyric = false) }
             context?.let { WidgetUpdateManager.updateAllWidgets(it) }
+        }
+    }
+
+    fun updateWidgetConfig(newConfig: WidgetConfig, context: Context) {
+        WidgetPreferences(context).saveConfig(newConfig)
+        _uiState.update { it.copy(widgetConfig = newConfig) }
+        viewModelScope.launch {
+            WidgetUpdateManager.updateAllWidgets(context)
         }
     }
 

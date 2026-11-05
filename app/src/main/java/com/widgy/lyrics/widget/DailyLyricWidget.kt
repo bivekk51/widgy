@@ -2,11 +2,11 @@ package com.widgy.lyrics.widget
 
 import android.content.Context
 import android.content.Intent
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
-import androidx.glance.GlanceTheme
 import androidx.glance.action.ActionParameters
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
@@ -26,15 +26,23 @@ import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
 import androidx.glance.layout.padding
+import androidx.glance.layout.width
 import androidx.glance.text.FontFamily
 import androidx.glance.text.FontStyle
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
+import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
+import androidx.glance.unit.ColorProvider
 import com.widgy.lyrics.MainActivity
 import com.widgy.lyrics.data.db.AppDatabase
+import com.widgy.lyrics.data.preferences.WidgetAttribution
+import com.widgy.lyrics.data.preferences.WidgetConfig
+import com.widgy.lyrics.data.preferences.WidgetPreferences
+import com.widgy.lyrics.data.preferences.WidgetTemplate
 import com.widgy.lyrics.data.repository.LyricsRepository
 import com.widgy.lyrics.domain.model.DailyLyric
+import com.widgy.lyrics.widget.WidgetUpdateManager
 
 class DailyLyricWidget : GlanceAppWidget() {
 
@@ -44,17 +52,16 @@ class DailyLyricWidget : GlanceAppWidget() {
         val db = AppDatabase.getDatabase(context)
         val repository = LyricsRepository(db)
         val dailyLyric = repository.getTodayDailyLyric()
+        val config = WidgetPreferences(context).getConfig()
 
         provideContent {
-            GlanceTheme {
-                WidgetContent(context = context, dailyLyric = dailyLyric)
-            }
+            WidgetContent(context = context, dailyLyric = dailyLyric, config = config)
         }
     }
 }
 
 @androidx.compose.runtime.Composable
-private fun WidgetContent(context: Context, dailyLyric: DailyLyric?) {
+private fun WidgetContent(context: Context, dailyLyric: DailyLyric?, config: WidgetConfig) {
     val clickIntent = Intent(context, MainActivity::class.java).apply {
         flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
         if (dailyLyric != null) {
@@ -63,91 +70,134 @@ private fun WidgetContent(context: Context, dailyLyric: DailyLyric?) {
         }
     }
 
+    // Card background based on chosen template
+    val bgColor = when (config.template) {
+        WidgetTemplate.GENIUS -> Color(0xFF0C0C0C) // Deep pitch black like Genius card
+        WidgetTemplate.CLASSIC -> Color(0xFF161618)
+        WidgetTemplate.MINIMAL -> Color(0xFF1E1E22)
+    }
+
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
-            .cornerRadius(20.dp)
-            .background(GlanceTheme.colors.surface)
-            .padding(horizontal = 16.dp, vertical = 12.dp)
-            .clickable(actionStartActivity(clickIntent)),
+            .cornerRadius(22.dp)
+            .background(ColorProvider(bgColor))
+            .padding(horizontal = 10.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center
     ) {
-        if (dailyLyric == null) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalAlignment = Alignment.CenterVertically
+        // Discreet refresh button isolated in top-right corner with 44dp accessible touch target
+        Box(
+            modifier = GlanceModifier
+                .fillMaxSize(),
+            contentAlignment = Alignment.TopEnd
+        ) {
+            Box(
+                modifier = GlanceModifier
+                    .width(44.dp)
+                    .height(44.dp)
+                    .clickable(actionRunCallback<RefreshLyricActionCallback>()),
+                contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "No lyrics curated yet",
+                    text = "↻",
                     style = TextStyle(
-                        color = GlanceTheme.colors.onSurface,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                )
-                Spacer(modifier = GlanceModifier.height(4.dp))
-                Text(
-                    text = "Tap to search and add lyrics",
-                    style = TextStyle(
-                        color = GlanceTheme.colors.onSurfaceVariant,
-                        fontSize = 12.sp
+                        color = ColorProvider(Color(0x88FFFFFF)),
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
                     )
                 )
             }
-        } else {
-            Column(
-                modifier = GlanceModifier.fillMaxSize(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    modifier = GlanceModifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "DAILY LYRIC",
-                        style = TextStyle(
-                            color = GlanceTheme.colors.primary,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold
-                        ),
-                        modifier = GlanceModifier.defaultWeight()
+        }
+
+        // Center Clickable Area (Opens App)
+        Column(
+            modifier = GlanceModifier
+                .fillMaxSize()
+                .padding(horizontal = 4.dp, vertical = 2.dp)
+                .clickable(actionStartActivity(clickIntent)),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (dailyLyric == null) {
+                Text(
+                    text = "No lyrics curated yet",
+                    style = TextStyle(
+                        color = ColorProvider(Color(0xFFE0E0E0)),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium,
+                        textAlign = TextAlign.Center
                     )
-                    Text(
-                        text = "↻",
-                        style = TextStyle(
-                            color = GlanceTheme.colors.primary,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold
-                        ),
-                        modifier = GlanceModifier.padding(horizontal = 4.dp, vertical = 2.dp)
-                            .clickable(actionRunCallback<RefreshLyricActionCallback>())
+                )
+                Spacer(modifier = GlanceModifier.height(4.dp))
+                Text(
+                    text = "Tap to search and pick lines",
+                    style = TextStyle(
+                        color = ColorProvider(Color(0xFF8E8E93)),
+                        fontSize = 12.sp,
+                        textAlign = TextAlign.Center
+                    )
+                )
+            } else {
+                val formattedText = when (config.template) {
+                    WidgetTemplate.GENIUS -> {
+                        // Genius style: all-caps, clean bold quotation
+                        val uppercase = dailyLyric.text.uppercase()
+                        "“$uppercase”"
+                    }
+                    WidgetTemplate.CLASSIC -> "“${dailyLyric.text}”"
+                    WidgetTemplate.MINIMAL -> "“${dailyLyric.text}”"
+                }
+
+                val textStyle = when (config.template) {
+                    WidgetTemplate.GENIUS -> TextStyle(
+                        color = ColorProvider(Color(0xFFFFFFFF)),
+                        fontSize = config.fontSize.sizeSp.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.SansSerif,
+                        textAlign = TextAlign.Center
+                    )
+                    WidgetTemplate.CLASSIC -> TextStyle(
+                        color = ColorProvider(Color(0xFFF2F2F7)),
+                        fontSize = config.fontSize.sizeSp.sp,
+                        fontStyle = FontStyle.Italic,
+                        fontFamily = FontFamily.Serif,
+                        textAlign = TextAlign.Center
+                    )
+                    WidgetTemplate.MINIMAL -> TextStyle(
+                        color = ColorProvider(Color(0xFFFFFFFF)),
+                        fontSize = config.fontSize.sizeSp.sp,
+                        fontWeight = FontWeight.Medium,
+                        fontFamily = FontFamily.SansSerif,
+                        textAlign = TextAlign.Center
                     )
                 }
 
-                Spacer(modifier = GlanceModifier.height(4.dp))
-
                 Text(
-                    text = "“${dailyLyric.text}”",
-                    style = TextStyle(
-                        color = GlanceTheme.colors.onSurface,
-                        fontSize = 19.sp,
-                        fontStyle = FontStyle.Italic,
-                        fontFamily = FontFamily.Serif
-                    ),
-                    maxLines = 3
+                    text = formattedText,
+                    style = textStyle,
+                    maxLines = 4
                 )
 
-                Spacer(modifier = GlanceModifier.height(6.dp))
+                // Optional Attribution Footer
+                val attributionText = when (config.attribution) {
+                    WidgetAttribution.NONE -> null
+                    WidgetAttribution.ARTIST_ONLY -> "— ${dailyLyric.artistName}"
+                    WidgetAttribution.SONG_AND_ARTIST -> "— ${dailyLyric.songTitle} • ${dailyLyric.artistName}"
+                }
 
-                Text(
-                    text = "— ${dailyLyric.songTitle} • ${dailyLyric.artistName}",
-                    style = TextStyle(
-                        color = GlanceTheme.colors.onSurfaceVariant,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium
-                    ),
-                    maxLines = 1
-                )
+                if (attributionText != null) {
+                    Spacer(modifier = GlanceModifier.height(8.dp))
+                    Text(
+                        text = attributionText,
+                        style = TextStyle(
+                            color = ColorProvider(Color(0xFF8E8E93)),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
+                            textAlign = TextAlign.Center
+                        ),
+                        maxLines = 1
+                    )
+                }
             }
         }
     }
@@ -163,5 +213,6 @@ class RefreshLyricActionCallback : ActionCallback {
         val repository = LyricsRepository(db)
         repository.refreshTodayLyric()
         DailyLyricWidget().update(context, glanceId)
+        WidgetUpdateManager.updateAllWidgets(context)
     }
 }

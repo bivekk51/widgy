@@ -9,7 +9,6 @@ import com.widgy.lyrics.domain.model.Candidate
 import com.widgy.lyrics.domain.model.DailyLyric
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import kotlin.math.abs
 import kotlin.random.Random
 
 class DailyRotationEngine(
@@ -41,19 +40,17 @@ class DailyRotationEngine(
 
     suspend fun resolveDailyLyric(date: LocalDate, forceRefresh: Boolean = false): DailyLyric? {
         val dateString = date.format(dateFormatter)
+        val existing = dailyHistoryDao.getDailyLyric(dateString)
 
-        if (!forceRefresh) {
-            val existing = dailyHistoryDao.getDailyLyric(dateString)
-            if (existing != null) {
-                return DailyLyric(
-                    date = existing.date,
-                    songId = existing.songId,
-                    snippetId = existing.snippetId,
-                    text = existing.lyricText,
-                    songTitle = existing.songTitle,
-                    artistName = existing.artistName
-                )
-            }
+        if (!forceRefresh && existing != null) {
+            return DailyLyric(
+                date = existing.date,
+                songId = existing.songId,
+                snippetId = existing.snippetId,
+                text = existing.lyricText,
+                songTitle = existing.songTitle,
+                artistName = existing.artistName
+            )
         }
 
         val candidates = buildCandidatePool()
@@ -61,18 +58,17 @@ class DailyRotationEngine(
             return null
         }
 
-        val selectedCandidate = if (forceRefresh && candidates.size > 1) {
-            val existing = dailyHistoryDao.getDailyLyric(dateString)
-            val filtered = candidates.filter { candidate ->
-                when (candidate) {
-                    is Candidate.Curated -> candidate.snippet.id != existing?.snippetId
-                    is Candidate.RandomSong -> candidate.song.id != existing?.songId
+        val selectedCandidate = if (forceRefresh) {
+            if (candidates.size > 1) {
+                val filtered = candidates.filter { candidate ->
+                    when (candidate) {
+                        is Candidate.Curated -> candidate.snippet.content != existing?.lyricText
+                        is Candidate.RandomSong -> candidate.song.id != existing?.songId
+                    }
                 }
-            }
-            if (filtered.isNotEmpty()) {
-                filtered.random()
+                if (filtered.isNotEmpty()) filtered.random() else candidates.random()
             } else {
-                candidates.random()
+                candidates.first()
             }
         } else {
             val epochDay = date.toEpochDay()
@@ -83,11 +79,26 @@ class DailyRotationEngine(
 
         val resolved = when (selectedCandidate) {
             is Candidate.Curated -> {
+                val text = if (forceRefresh && candidates.size == 1 && selectedCandidate.snippet.content == existing?.lyricText) {
+                    val cleaned = LyricsCleaner.cleanLyrics(selectedCandidate.song.plainLyrics)
+                    val alternate = cleaned.filter { it.text != existing?.lyricText }
+                    if (alternate.isNotEmpty()) {
+                        val randIdx = Random.nextInt(alternate.size)
+                        val lineCount = if (alternate.size > 1 && Random.nextBoolean()) 2 else 1
+                        val endIdx = (randIdx + lineCount).coerceAtMost(alternate.size)
+                        alternate.subList(randIdx, endIdx).joinToString("\n") { it.text }
+                    } else {
+                        selectedCandidate.snippet.content
+                    }
+                } else {
+                    selectedCandidate.snippet.content
+                }
+
                 DailyLyric(
                     date = dateString,
                     songId = selectedCandidate.song.id,
                     snippetId = selectedCandidate.snippet.id,
-                    text = selectedCandidate.snippet.content,
+                    text = text,
                     songTitle = selectedCandidate.song.title,
                     artistName = selectedCandidate.song.artist
                 )
@@ -95,15 +106,28 @@ class DailyRotationEngine(
             is Candidate.RandomSong -> {
                 val cleanedLines = LyricsCleaner.cleanLyrics(selectedCandidate.song.plainLyrics)
                 val lineText = if (cleanedLines.isNotEmpty()) {
-                    val epochDay = date.toEpochDay()
-                    val rawHash = (epochDay * 17 + seed + (if (forceRefresh) Random.nextInt(100) else 0)).hashCode().toLong()
-                    val startIndex = (rawHash and 0x7FFFFFFFL).toInt() % cleanedLines.size
-                    val lineCount = if (cleanedLines.size > 1 && Random.nextBoolean()) 2 else 1
-                    val endIndex = (startIndex + lineCount).coerceAtMost(cleanedLines.size)
-                    cleanedLines.subList(startIndex, endIndex).joinToString("\n") { it.text }
+                    if (forceRefresh) {
+                        val nonMatching = cleanedLines.filter { it.text != existing?.lyricText }
+                        if (nonMatching.isNotEmpty()) {
+                            val randIdx = Random.nextInt(nonMatching.size)
+                            val lineCount = if (nonMatching.size > 1 && Random.nextBoolean()) 2 else 1
+                            val endIdx = (randIdx + lineCount).coerceAtMost(nonMatching.size)
+                            nonMatching.subList(randIdx, endIdx).joinToString("\n") { it.text }
+                        } else {
+                            cleanedLines.random().text
+                        }
+                    } else {
+                        val epochDay = date.toEpochDay()
+                        val rawHash = (epochDay * 17 + seed).hashCode().toLong()
+                        val startIndex = (rawHash and 0x7FFFFFFFL).toInt() % cleanedLines.size
+                        val lineCount = if (cleanedLines.size > 1 && (epochDay % 2L == 0L)) 2 else 1
+                        val endIndex = (startIndex + lineCount).coerceAtMost(cleanedLines.size)
+                        cleanedLines.subList(startIndex, endIndex).joinToString("\n") { it.text }
+                    }
                 } else {
                     selectedCandidate.song.title
                 }
+
                 DailyLyric(
                     date = dateString,
                     songId = selectedCandidate.song.id,

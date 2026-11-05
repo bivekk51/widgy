@@ -1,6 +1,7 @@
 package com.widgy.lyrics.ui.dashboard
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -25,6 +27,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -43,13 +46,20 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.widgy.lyrics.data.db.SnippetEntity
 import com.widgy.lyrics.data.db.SongWithSnippets
+import com.widgy.lyrics.data.preferences.WidgetAttribution
+import com.widgy.lyrics.data.preferences.WidgetConfig
+import com.widgy.lyrics.data.preferences.WidgetFontSize
+import com.widgy.lyrics.data.preferences.WidgetTemplate
 import com.widgy.lyrics.domain.model.DailyLyric
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -60,7 +70,7 @@ fun DashboardScreen(
     onSongClick: (Long) -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalContext.current
 
     Scaffold(
         topBar = {
@@ -92,12 +102,22 @@ fun DashboardScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
-                TodayLyricCard(
+                TodayLyricLiveCard(
                     dailyLyric = state.todayLyric,
+                    config = state.widgetConfig,
                     isRefreshing = state.isRefreshingLyric,
                     onRefreshClick = { viewModel.refreshTodayLyric(context) },
                     onClick = {
                         state.todayLyric?.let { onSongClick(it.songId) }
+                    }
+                )
+            }
+
+            item {
+                WidgetTemplateCustomizer(
+                    config = state.widgetConfig,
+                    onConfigChanged = { updated ->
+                        viewModel.updateWidgetConfig(updated, context)
                     }
                 )
             }
@@ -116,7 +136,7 @@ fun DashboardScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 32.dp),
+                            .padding(vertical = 24.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -127,7 +147,7 @@ fun DashboardScreen(
                             )
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
-                                "Tap + to search lyrics and curate lines",
+                                "Tap + to search lyrics and curate 1 or 2 lines",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.outline
                             )
@@ -156,80 +176,204 @@ fun DashboardScreen(
 }
 
 @Composable
-private fun TodayLyricCard(
+private fun TodayLyricLiveCard(
     dailyLyric: DailyLyric?,
+    config: WidgetConfig,
     isRefreshing: Boolean,
     onRefreshClick: () -> Unit,
     onClick: () -> Unit
 ) {
+    val cardBg = when (config.template) {
+        WidgetTemplate.GENIUS -> Color(0xFF0C0C0C)
+        WidgetTemplate.CLASSIC -> Color(0xFF161618)
+        WidgetTemplate.MINIMAL -> Color(0xFF1E1E22)
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(22.dp))
             .clickable { onClick() },
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
-        ),
-        shape = RoundedCornerShape(16.dp)
+        colors = CardDefaults.cardColors(containerColor = cardBg),
+        shape = RoundedCornerShape(22.dp)
     ) {
-        Column(modifier = Modifier.padding(18.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "TODAY'S WIDGET PREVIEW",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.sp,
-                    modifier = Modifier.weight(1f)
-                )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(18.dp)
+        ) {
+            // Top Right Refresh Button
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.TopEnd) {
                 if (isRefreshing) {
-                    CircularProgressIndicator(modifier = Modifier.height(18.dp).width(18.dp))
+                    CircularProgressIndicator(
+                        modifier = Modifier
+                            .height(18.dp)
+                            .width(18.dp),
+                        color = Color.White
+                    )
                 } else {
                     IconButton(onClick = onRefreshClick) {
                         Icon(
                             Icons.Default.Refresh,
                             contentDescription = "Shuffle Lyric",
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = Color(0x99FFFFFF)
                         )
                     }
                 }
             }
 
+            // Center Content
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 12.dp, horizontal = 8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                if (dailyLyric == null) {
+                    Text(
+                        text = "“No lyrics in rotation yet”",
+                        color = Color(0xFF8E8E93),
+                        fontSize = 17.sp,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "Tap + below to add your first song",
+                        color = Color(0xFF636366),
+                        fontSize = 12.sp,
+                        textAlign = TextAlign.Center
+                    )
+                } else {
+                    val formatted = when (config.template) {
+                        WidgetTemplate.GENIUS -> "“${dailyLyric.text.uppercase()}”"
+                        else -> "“${dailyLyric.text}”"
+                    }
+
+                    val fontStyle = when (config.template) {
+                        WidgetTemplate.GENIUS -> MaterialTheme.typography.titleLarge.copy(
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.SansSerif,
+                            fontSize = config.fontSize.sizeSp.sp,
+                            textAlign = TextAlign.Center
+                        )
+                        WidgetTemplate.CLASSIC -> MaterialTheme.typography.titleLarge.copy(
+                            color = Color(0xFFF2F2F7),
+                            fontStyle = FontStyle.Italic,
+                            fontFamily = FontFamily.Serif,
+                            fontSize = config.fontSize.sizeSp.sp,
+                            textAlign = TextAlign.Center
+                        )
+                        WidgetTemplate.MINIMAL -> MaterialTheme.typography.titleLarge.copy(
+                            color = Color.White,
+                            fontWeight = FontWeight.Medium,
+                            fontFamily = FontFamily.SansSerif,
+                            fontSize = config.fontSize.sizeSp.sp,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+
+                    Text(
+                        text = formatted,
+                        style = fontStyle,
+                        textAlign = TextAlign.Center
+                    )
+
+                    val attribution = when (config.attribution) {
+                        WidgetAttribution.NONE -> null
+                        WidgetAttribution.ARTIST_ONLY -> "— ${dailyLyric.artistName}"
+                        WidgetAttribution.SONG_AND_ARTIST -> "— ${dailyLyric.songTitle} • ${dailyLyric.artistName}"
+                    }
+
+                    if (attribution != null) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            text = attribution,
+                            color = Color(0xFF8E8E93),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun WidgetTemplateCustomizer(
+    config: WidgetConfig,
+    onConfigChanged: (WidgetConfig) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+        )
+    ) {
+        Column(modifier = Modifier.padding(14.dp)) {
+            Text(
+                text = "Widget Style & Template",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+
             Spacer(modifier = Modifier.height(8.dp))
 
-            if (dailyLyric == null) {
-                Text(
-                    text = "“No lyrics in your rotation yet.”",
-                    fontStyle = FontStyle.Italic,
-                    fontFamily = FontFamily.Serif,
-                    fontSize = 17.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(
-                    text = "Add songs below to power your daily widget",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.outline
-                )
-            } else {
-                Text(
-                    text = "“${dailyLyric.text}”",
-                    fontStyle = FontStyle.Italic,
-                    fontFamily = FontFamily.Serif,
-                    fontSize = 18.sp,
-                    lineHeight = 24.sp,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(modifier = Modifier.height(10.dp))
-                Text(
-                    text = "— ${dailyLyric.songTitle} • ${dailyLyric.artistName}",
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            // Template Style Row
+            Text(
+                text = "Template",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(WidgetTemplate.values()) { template ->
+                    FilterChip(
+                        selected = config.template == template,
+                        onClick = { onConfigChanged(config.copy(template = template)) },
+                        label = { Text(template.displayName) }
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Attribution Row
+            Text(
+                text = "Footer Display",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(WidgetAttribution.values()) { attr ->
+                    FilterChip(
+                        selected = config.attribution == attr,
+                        onClick = { onConfigChanged(config.copy(attribution = attr)) },
+                        label = { Text(attr.displayName) }
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Font Size Row
+            Text(
+                text = "Font Size",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(WidgetFontSize.values()) { size ->
+                    FilterChip(
+                        selected = config.fontSize == size,
+                        onClick = { onConfigChanged(config.copy(fontSize = size)) },
+                        label = { Text(size.displayName) }
+                    )
+                }
             }
         }
     }
@@ -308,7 +452,7 @@ private fun SongCurationCard(
                 Column(modifier = Modifier.padding(top = 10.dp)) {
                     if (song.isRandomPool) {
                         Text(
-                            text = "Every day, a random line from this track will be pulled into the daily pool.",
+                            text = "Every day, a random 1 or 2 lines from this track will be pulled into the daily pool.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(vertical = 4.dp)
@@ -325,7 +469,7 @@ private fun SongCurationCard(
 
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "View full lyrics →",
+                        text = "View & pick lines →",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.primary,
