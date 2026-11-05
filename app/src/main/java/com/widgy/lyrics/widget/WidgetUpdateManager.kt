@@ -1,7 +1,11 @@
 package com.widgy.lyrics.widget
 
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
 import androidx.glance.appwidget.GlanceAppWidgetManager
+import androidx.glance.appwidget.updateAll
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
@@ -30,14 +34,29 @@ object WidgetUpdateManager {
 
     suspend fun updateAllWidgets(context: Context) {
         try {
-            val glanceManager = GlanceAppWidgetManager(context)
-            val glanceIds = glanceManager.getGlanceIds(DailyLyricWidget::class.java)
-            val widget = DailyLyricWidget()
-            for (id in glanceIds) {
-                widget.update(context, id)
-            }
+            DailyLyricWidget().updateAll(context)
         } catch (_: Exception) {
-            // Safely ignored if widget is not active
+            try {
+                val glanceManager = GlanceAppWidgetManager(context)
+                val glanceIds = glanceManager.getGlanceIds(DailyLyricWidget::class.java)
+                val widget = DailyLyricWidget()
+                for (id in glanceIds) {
+                    widget.update(context, id)
+                }
+            } catch (_: Exception) {}
         }
+
+        try {
+            val appWidgetManager = AppWidgetManager.getInstance(context)
+            val componentName = ComponentName(context, DailyLyricWidgetReceiver::class.java)
+            val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
+            if (appWidgetIds.isNotEmpty()) {
+                val intent = Intent(context, DailyLyricWidgetReceiver::class.java).apply {
+                    action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds)
+                }
+                context.sendBroadcast(intent)
+            }
+        } catch (_: Exception) {}
     }
 }

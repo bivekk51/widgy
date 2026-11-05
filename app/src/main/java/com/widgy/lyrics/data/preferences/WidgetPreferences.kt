@@ -31,10 +31,10 @@ enum class WidgetFontSize(
     val sizeSp: Int,
     val lineHeightSp: Int
 ) {
-    REGULAR("Medium", 20, 27),
-    LARGE("Large", 24, 32),
-    EXTRA_LARGE("Extra Large", 28, 36),
-    JUMBO("Jumbo", 32, 40)
+    SMALL("Small", 16, 22),
+    MEDIUM("Medium", 22, 28),
+    LARGE("Large", 30, 38),
+    EXTRA_LARGE("Extra Large", 40, 48)
 }
 
 data class WidgetConfig(
@@ -53,11 +53,19 @@ class WidgetPreferences(context: Context) {
         val attrName = prefs.getString("attribution", WidgetAttribution.ARTIST_ONLY.name) ?: WidgetAttribution.ARTIST_ONLY.name
         val sizeName = prefs.getString("font_size", WidgetFontSize.LARGE.name) ?: WidgetFontSize.LARGE.name
 
+        val parsedSize = when (sizeName) {
+            "SMALL" -> WidgetFontSize.SMALL
+            "REGULAR", "MEDIUM" -> WidgetFontSize.MEDIUM
+            "LARGE" -> WidgetFontSize.LARGE
+            "EXTRA_LARGE", "JUMBO" -> WidgetFontSize.EXTRA_LARGE
+            else -> runCatching { WidgetFontSize.valueOf(sizeName) }.getOrDefault(WidgetFontSize.LARGE)
+        }
+
         return WidgetConfig(
             template = runCatching { WidgetTemplate.valueOf(templateName) }.getOrDefault(WidgetTemplate.GENIUS),
             fontFamily = runCatching { WidgetFontFamily.valueOf(fontName) }.getOrDefault(WidgetFontFamily.SYSTEM),
             attribution = runCatching { WidgetAttribution.valueOf(attrName) }.getOrDefault(WidgetAttribution.ARTIST_ONLY),
-            fontSize = runCatching { WidgetFontSize.valueOf(sizeName) }.getOrDefault(WidgetFontSize.LARGE)
+            fontSize = parsedSize
         )
     }
 

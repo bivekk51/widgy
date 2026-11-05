@@ -47,7 +47,7 @@ import com.widgy.lyrics.widget.WidgetUpdateManager
 
 class DailyLyricWidget : GlanceAppWidget() {
 
-    override val sizeMode: SizeMode = SizeMode.Exact
+    override val sizeMode: SizeMode = SizeMode.Single
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val db = AppDatabase.getDatabase(context)

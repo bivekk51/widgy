@@ -54,7 +54,7 @@ class WidgetPreferencesTest {
             template = WidgetTemplate.TERMINAL,
             fontFamily = WidgetFontFamily.MONOSPACE,
             attribution = WidgetAttribution.SONG_AND_ARTIST,
-            fontSize = WidgetFontSize.REGULAR
+            fontSize = WidgetFontSize.SMALL
         )
 
         widgetPrefs.saveConfig(config)
@@ -63,7 +63,7 @@ class WidgetPreferencesTest {
             editor.putString("template", WidgetTemplate.TERMINAL.name)
             editor.putString("font_family", WidgetFontFamily.MONOSPACE.name)
             editor.putString("attribution", WidgetAttribution.SONG_AND_ARTIST.name)
-            editor.putString("font_size", WidgetFontSize.REGULAR.name)
+            editor.putString("font_size", WidgetFontSize.SMALL.name)
             editor.apply()
         }
     }
