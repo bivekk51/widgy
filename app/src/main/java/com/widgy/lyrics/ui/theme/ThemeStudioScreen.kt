@@ -1,6 +1,7 @@
 package com.widgy.lyrics.ui.theme
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -29,8 +30,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -108,7 +107,8 @@ fun ThemeStudioScreen(
         bottomBar = {
             Surface(
                 tonalElevation = 6.dp,
-                shadowElevation = 8.dp
+                shadowElevation = 8.dp,
+                color = MaterialTheme.colorScheme.surface
             ) {
                 Box(
                     modifier = Modifier
@@ -122,7 +122,8 @@ fun ThemeStudioScreen(
                             .height(52.dp),
                         shape = RoundedCornerShape(16.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
                         )
                     ) {
                         Icon(
@@ -134,7 +135,7 @@ fun ThemeStudioScreen(
                         Text(
                             text = "Apply to Home Screen Widget",
                             fontSize = 16.sp,
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }
@@ -146,9 +147,9 @@ fun ThemeStudioScreen(
                 .fillMaxSize()
                 .padding(padding),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(18.dp)
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            // Live Preview Section
+            // 1. Live Preview Section
             item {
                 Text(
                     text = "LIVE WIDGET PREVIEW",
@@ -161,7 +162,7 @@ fun ThemeStudioScreen(
                 LiveWidgetPreviewCard(config = config, lyric = previewLyric)
             }
 
-            // Ready-Made Templates Gallery
+            // 2. Ready-Made Templates Gallery
             item {
                 Text(
                     text = "READY-MADE THEMES",
@@ -196,7 +197,7 @@ fun ThemeStudioScreen(
                 }
             }
 
-            // Customization Controls
+            // 3. Fine-Tune Customization Section
             item {
                 Text(
                     text = "FINE-TUNE CUSTOMIZATION",
@@ -205,73 +206,120 @@ fun ThemeStudioScreen(
                     color = MaterialTheme.colorScheme.primary,
                     letterSpacing = 1.2.sp
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(18.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
-                    )
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    // Control A: Typography Typeface
+                    CustomizationCard(
+                        title = "Typeface",
+                        subtitle = "Font family rendered across the quotes"
                     ) {
-                        // Typography
-                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Text(
-                                text = "Font Family",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                items(WidgetFontFamily.values()) { font ->
-                                    FilterChip(
-                                        selected = config.fontFamily == font,
-                                        onClick = { update(config.copy(fontFamily = font)) },
-                                        label = { Text(font.displayName) },
-                                        shape = RoundedCornerShape(10.dp)
-                                    )
-                                }
+                        SegmentedControl(
+                            items = WidgetFontFamily.values().toList(),
+                            selectedItem = config.fontFamily,
+                            onItemSelected = { font -> update(config.copy(fontFamily = font)) }
+                        ) { font, isSelected ->
+                            val fontType = when (font) {
+                                WidgetFontFamily.SERIF -> FontFamily.Serif
+                                WidgetFontFamily.MONOSPACE -> FontFamily.Monospace
+                                WidgetFontFamily.SYSTEM -> FontFamily.SansSerif
+                            }
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = "Aa",
+                                    fontSize = 17.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                    fontFamily = fontType,
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else Color(0xFF90909A)
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = when (font) {
+                                        WidgetFontFamily.SYSTEM -> "Sans"
+                                        WidgetFontFamily.SERIF -> "Serif"
+                                        WidgetFontFamily.MONOSPACE -> "Mono"
+                                    },
+                                    fontSize = 11.sp,
+                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                                    color = if (isSelected) Color.White else Color(0xFF70707A)
+                                )
                             }
                         }
+                    }
 
-                        // Font Size
-                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Text(
-                                text = "Font Size",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                items(WidgetFontSize.values()) { size ->
-                                    FilterChip(
-                                        selected = config.fontSize == size,
-                                        onClick = { update(config.copy(fontSize = size)) },
-                                        label = { Text("${size.displayName} (${size.sizeSp}sp)") },
-                                        shape = RoundedCornerShape(10.dp)
-                                    )
-                                }
+                    // Control B: Typography Size Scale
+                    CustomizationCard(
+                        title = "Font Size",
+                        subtitle = "Visual scale from subtle to bold hero statement"
+                    ) {
+                        SegmentedControl(
+                            items = WidgetFontSize.values().toList(),
+                            selectedItem = config.fontSize,
+                            onItemSelected = { size -> update(config.copy(fontSize = size)) }
+                        ) { size, isSelected ->
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = "A",
+                                    fontSize = when (size) {
+                                        WidgetFontSize.SMALL -> 13.sp
+                                        WidgetFontSize.MEDIUM -> 16.sp
+                                        WidgetFontSize.LARGE -> 20.sp
+                                        WidgetFontSize.EXTRA_LARGE -> 24.sp
+                                    },
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else Color(0xFF90909A)
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = when (size) {
+                                        WidgetFontSize.SMALL -> "16sp"
+                                        WidgetFontSize.MEDIUM -> "22sp"
+                                        WidgetFontSize.LARGE -> "30sp"
+                                        WidgetFontSize.EXTRA_LARGE -> "40sp"
+                                    },
+                                    fontSize = 10.sp,
+                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                                    color = if (isSelected) Color.White else Color(0xFF70707A)
+                                )
                             }
                         }
+                    }
 
-                        // Attribution
-                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Text(
-                                text = "Footer Attribution",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                items(WidgetAttribution.values()) { attr ->
-                                    FilterChip(
-                                        selected = config.attribution == attr,
-                                        onClick = { update(config.copy(attribution = attr)) },
-                                        label = { Text(attr.displayName) },
-                                        shape = RoundedCornerShape(10.dp)
-                                    )
-                                }
+                    // Control C: Attribution Format
+                    CustomizationCard(
+                        title = "Footer Attribution",
+                        subtitle = "Track metadata credit displayed below the lyric"
+                    ) {
+                        SegmentedControl(
+                            items = WidgetAttribution.values().toList(),
+                            selectedItem = config.attribution,
+                            onItemSelected = { attr -> update(config.copy(attribution = attr)) }
+                        ) { attr, isSelected ->
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = when (attr) {
+                                        WidgetAttribution.NONE -> "None"
+                                        WidgetAttribution.ARTIST_ONLY -> "Artist"
+                                        WidgetAttribution.SONG_AND_ARTIST -> "Song & Artist"
+                                    },
+                                    fontSize = 12.sp,
+                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                                    color = if (isSelected) Color.White else Color(0xFF90909A),
+                                    textAlign = TextAlign.Center,
+                                    maxLines = 1
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = when (attr) {
+                                        WidgetAttribution.NONE -> "Lyric only"
+                                        WidgetAttribution.ARTIST_ONLY -> "— Artist"
+                                        WidgetAttribution.SONG_AND_ARTIST -> "— Song • Artist"
+                                    },
+                                    fontSize = 9.sp,
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else Color(0xFF60606A),
+                                    textAlign = TextAlign.Center,
+                                    maxLines = 1
+                                )
                             }
                         }
                     }
@@ -280,6 +328,86 @@ fun ThemeStudioScreen(
 
             item {
                 Spacer(modifier = Modifier.height(24.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun CustomizationCard(
+    title: String,
+    subtitle: String,
+    content: @Composable () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+        border = BorderStroke(1.dp, Color(0xFF26262E))
+    ) {
+        Column(modifier = Modifier.padding(14.dp)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 11.sp
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+            content()
+        }
+    }
+}
+
+@Composable
+private fun <T> SegmentedControl(
+    items: List<T>,
+    selectedItem: T,
+    onItemSelected: (T) -> Unit,
+    modifier: Modifier = Modifier,
+    itemLabel: @Composable (T, Boolean) -> Unit
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        color = Color(0xFF141418),
+        border = BorderStroke(1.dp, Color(0xFF24242C))
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            items.forEach { item ->
+                val isSelected = item == selectedItem
+                val bgColor by animateColorAsState(
+                    targetValue = if (isSelected) Color(0xFF262630) else Color.Transparent,
+                    label = "segmentBg"
+                )
+                val borderColor by animateColorAsState(
+                    targetValue = if (isSelected) Color(0xFF3E3E4C) else Color.Transparent,
+                    label = "segmentBorder"
+                )
+
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(bgColor)
+                        .border(1.dp, borderColor, RoundedCornerShape(8.dp))
+                        .clickable { onItemSelected(item) }
+                        .padding(vertical = 10.dp, horizontal = 4.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    itemLabel(item, isSelected)
+                }
             }
         }
     }
@@ -336,6 +464,13 @@ private fun LiveWidgetPreviewCard(
         else -> FontWeight.Medium
     }
 
+    val attributionColor = when (config.template) {
+        WidgetTemplate.SPOTIFY -> Color(0xFF1ED760)
+        WidgetTemplate.TERMINAL -> Color(0xFFE5A93C)
+        WidgetTemplate.MINIMAL -> Color(0xFF636366)
+        else -> Color(0xFF8E8E93)
+    }
+
     val attributionText = when (config.attribution) {
         WidgetAttribution.NONE -> null
         WidgetAttribution.ARTIST_ONLY -> when (config.template) {
@@ -350,72 +485,42 @@ private fun LiveWidgetPreviewCard(
         }
     }
 
-    val attributionColor = when (config.template) {
-        WidgetTemplate.SPOTIFY -> Color(0xFF1ED760)
-        WidgetTemplate.TERMINAL -> Color(0xFFE5A93C)
-        WidgetTemplate.MINIMAL -> Color(0xFF636366)
-        else -> Color(0xFF8E8E93)
-    }
-
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(22.dp)),
         colors = CardDefaults.cardColors(containerColor = bgColor),
-        shape = RoundedCornerShape(22.dp)
+        shape = RoundedCornerShape(22.dp),
+        border = BorderStroke(1.dp, Color(0xFF26262E))
     ) {
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 18.dp),
-            contentAlignment = Alignment.Center
+                .padding(horizontal = 16.dp, vertical = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            // Refresh Icon indicator in top right
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.TopEnd
-            ) {
-                Text(
-                    text = "↻",
-                    color = when (config.template) {
-                        WidgetTemplate.SPOTIFY -> Color(0xAA1ED760)
-                        WidgetTemplate.TERMINAL -> Color(0xAAFFB454)
-                        else -> Color(0x88FFFFFF)
-                    },
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
+            Text(
+                text = formatted,
+                color = textColor,
+                fontSize = config.fontSize.sizeSp.sp,
+                lineHeight = config.fontSize.lineHeightSp.sp,
+                fontWeight = fontWeight,
+                fontStyle = fontStyle,
+                fontFamily = finalFontFamily,
+                textAlign = TextAlign.Center
+            )
 
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 4.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
+            if (attributionText != null) {
+                Spacer(modifier = Modifier.height(10.dp))
                 Text(
-                    text = formatted,
-                    color = textColor,
-                    fontSize = config.fontSize.sizeSp.sp,
-                    lineHeight = config.fontSize.lineHeightSp.sp,
-                    fontWeight = fontWeight,
-                    fontStyle = fontStyle,
-                    fontFamily = finalFontFamily,
+                    text = attributionText,
+                    color = attributionColor,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    fontFamily = if (config.template == WidgetTemplate.TERMINAL) FontFamily.Monospace else FontFamily.SansSerif,
                     textAlign = TextAlign.Center
                 )
-
-                if (attributionText != null) {
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Text(
-                        text = attributionText,
-                        color = attributionColor,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                        fontFamily = if (config.template == WidgetTemplate.TERMINAL) FontFamily.Monospace else FontFamily.SansSerif,
-                        textAlign = TextAlign.Center
-                    )
-                }
             }
         }
     }
@@ -428,7 +533,7 @@ private fun TemplateGalleryCard(
     onClick: () -> Unit
 ) {
     val borderColor by animateColorAsState(
-        targetValue = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
+        targetValue = if (isSelected) MaterialTheme.colorScheme.primary else Color(0xFF26262E),
         label = "border"
     )
 
@@ -474,7 +579,7 @@ private fun TemplateGalleryCard(
             .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = Color(0xFF141418)
         )
     ) {
         Column(modifier = Modifier.padding(10.dp)) {
@@ -524,7 +629,8 @@ private fun TemplateGalleryCard(
                     Text(
                         text = template.displayName,
                         style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
                     )
                     Text(
                         text = template.subtitle,
