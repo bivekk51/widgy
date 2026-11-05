@@ -17,6 +17,7 @@ import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
+import androidx.glance.state.GlanceStateDefinition
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
@@ -47,16 +48,31 @@ import com.widgy.lyrics.widget.WidgetUpdateManager
 
 class DailyLyricWidget : GlanceAppWidget() {
 
+    override val stateDefinition: GlanceStateDefinition<*>? = null
     override val sizeMode: SizeMode = SizeMode.Single
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val db = AppDatabase.getDatabase(context)
         val repository = LyricsRepository(db)
         val dailyLyric = repository.getTodayDailyLyric()
-        val config = WidgetPreferences(context).getConfig()
+        if (dailyLyric != null) {
+            WidgetPreferences(context).saveCachedLyric(dailyLyric)
+        }
 
         provideContent {
-            WidgetContent(context = context, dailyLyric = dailyLyric, config = config)
+            val config = WidgetPreferences(context).getConfig()
+            val cached = WidgetPreferences(context).getCachedLyric()
+            val lyricToDisplay = dailyLyric ?: cached?.let {
+                DailyLyric(
+                    date = "",
+                    songId = it.songId,
+                    snippetId = null,
+                    text = it.text,
+                    songTitle = it.songTitle,
+                    artistName = it.artistName
+                )
+            }
+            WidgetContent(context = context, dailyLyric = lyricToDisplay, config = config)
         }
     }
 }
@@ -88,37 +104,7 @@ private fun WidgetContent(context: Context, dailyLyric: DailyLyric?, config: Wid
             .padding(horizontal = 10.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center
     ) {
-        // Discreet refresh button isolated in top-right corner with 44dp accessible touch target
-        Box(
-            modifier = GlanceModifier
-                .fillMaxSize(),
-            contentAlignment = Alignment.TopEnd
-        ) {
-            Box(
-                modifier = GlanceModifier
-                    .width(44.dp)
-                    .height(44.dp)
-                    .clickable(actionRunCallback<RefreshLyricActionCallback>()),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "↻",
-                    style = TextStyle(
-                        color = ColorProvider(
-                            when (config.template) {
-                                WidgetTemplate.SPOTIFY -> Color(0xAA1ED760)
-                                WidgetTemplate.TERMINAL -> Color(0xAAFFB454)
-                                else -> Color(0x88FFFFFF)
-                            }
-                        ),
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                )
-            }
-        }
-
-        // Center Clickable Area (Opens App)
+        // 1. Center Clickable Area (Opens App)
         Column(
             modifier = GlanceModifier
                 .fillMaxSize()
@@ -252,6 +238,36 @@ private fun WidgetContent(context: Context, dailyLyric: DailyLyric?, config: Wid
                 }
             }
         }
+
+        // 2. Top-Right Refresh Button (rendered ON TOP of Column to capture clicks cleanly)
+        Box(
+            modifier = GlanceModifier
+                .fillMaxSize(),
+            contentAlignment = Alignment.TopEnd
+        ) {
+            Box(
+                modifier = GlanceModifier
+                    .width(48.dp)
+                    .height(48.dp)
+                    .clickable(actionRunCallback<RefreshLyricActionCallback>()),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "↻",
+                    style = TextStyle(
+                        color = ColorProvider(
+                            when (config.template) {
+                                WidgetTemplate.SPOTIFY -> Color(0xAA1ED760)
+                                WidgetTemplate.TERMINAL -> Color(0xAAFFB454)
+                                else -> Color(0x88FFFFFF)
+                            }
+                        ),
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                )
+            }
+        }
     }
 }
 
@@ -263,8 +279,10 @@ class RefreshLyricActionCallback : ActionCallback {
     ) {
         val db = AppDatabase.getDatabase(context)
         val repository = LyricsRepository(db)
-        repository.refreshTodayLyric()
-        DailyLyricWidget().update(context, glanceId)
+        val newLyric = repository.refreshTodayLyric()
+        if (newLyric != null) {
+            WidgetPreferences(context).saveCachedLyric(newLyric)
+        }
         WidgetUpdateManager.updateAllWidgets(context)
     }
 }

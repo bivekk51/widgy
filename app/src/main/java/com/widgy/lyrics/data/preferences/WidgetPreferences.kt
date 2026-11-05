@@ -2,6 +2,7 @@ package com.widgy.lyrics.data.preferences
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.widgy.lyrics.domain.model.DailyLyric
 
 enum class WidgetTemplate(
     val displayName: String,
@@ -44,8 +45,32 @@ data class WidgetConfig(
     val fontSize: WidgetFontSize = WidgetFontSize.LARGE
 )
 
+data class CachedLyric(
+    val text: String,
+    val songTitle: String,
+    val artistName: String,
+    val songId: Long = 0L
+)
+
 class WidgetPreferences(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
+
+    fun getCachedLyric(): CachedLyric? {
+        val text = prefs.getString("cached_lyric_text", null) ?: return null
+        val title = prefs.getString("cached_lyric_title", "") ?: ""
+        val artist = prefs.getString("cached_lyric_artist", "") ?: ""
+        val songId = prefs.getLong("cached_lyric_song_id", 0L)
+        return CachedLyric(text, title, artist, songId)
+    }
+
+    fun saveCachedLyric(lyric: DailyLyric) {
+        prefs.edit()
+            .putString("cached_lyric_text", lyric.text)
+            .putString("cached_lyric_title", lyric.songTitle)
+            .putString("cached_lyric_artist", lyric.artistName)
+            .putLong("cached_lyric_song_id", lyric.songId)
+            .apply()
+    }
 
     fun getConfig(): WidgetConfig {
         val templateName = prefs.getString("template", WidgetTemplate.GENIUS.name) ?: WidgetTemplate.GENIUS.name
