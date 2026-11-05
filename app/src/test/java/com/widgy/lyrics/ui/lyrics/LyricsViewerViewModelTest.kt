@@ -35,12 +35,22 @@ class LyricsViewerViewModelTest {
     }
 
     @Test
-    fun saveSelectedSnippets_onExistingSong_passesExistingSongId() = runTest(testDispatcher) {
+    fun toggleLineSelection_limitsToMaximumTwoLines() = runTest(testDispatcher) {
+        viewModel.toggleLineSelection(0)
+        viewModel.toggleLineSelection(1)
+        viewModel.toggleLineSelection(2)
+
+        assertEquals(setOf(0, 1), viewModel.uiState.value.selectedLineIndices)
+        assertEquals("Maximum 2 lines can be selected", viewModel.uiState.value.selectionWarning)
+    }
+
+    @Test
+    fun saveSelectedSnippets_twoLinesSelected_savesAsSingleTwoLineSnippet() = runTest(testDispatcher) {
         val existingSong = SongEntity(
             id = 42L,
             title = "Sing About Me",
             artist = "Kendrick Lamar",
-            plainLyrics = "Promise that you will sing about me\nForever"
+            plainLyrics = "Line 1\nLine 2\nLine 3"
         )
         coEvery { repository.getSongById(42L) } returns existingSong
 
@@ -48,6 +58,7 @@ class LyricsViewerViewModelTest {
         testScheduler.advanceUntilIdle()
 
         viewModel.toggleLineSelection(0)
+        viewModel.toggleLineSelection(1)
         viewModel.saveSelectedSnippets {}
         testScheduler.advanceUntilIdle()
 
@@ -58,7 +69,7 @@ class LyricsViewerViewModelTest {
                 album = any(),
                 plainLyrics = any(),
                 lrclibId = any(),
-                snippets = listOf("Promise that you will sing about me"),
+                snippets = listOf("Line 1\nLine 2"),
                 isRandomPool = false,
                 existingSongId = 42L
             )

@@ -1,11 +1,13 @@
 package com.widgy.lyrics.ui.lyrics
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.widgy.lyrics.data.api.LyricLine
 import com.widgy.lyrics.data.api.LyricsCleaner
 import com.widgy.lyrics.data.model.LrcTrackDto
 import com.widgy.lyrics.data.repository.LyricsRepository
+import com.widgy.lyrics.widget.WidgetUpdateManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,6 +23,7 @@ data class LyricsViewerUiState(
     val lines: List<LyricLine> = emptyList(),
     val rawLyrics: String = "",
     val selectedLineIndices: Set<Int> = emptySet(),
+    val selectionWarning: String? = null,
     val isRandomPool: Boolean = false,
     val isLoading: Boolean = false,
     val isSaved: Boolean = false,
@@ -46,6 +49,8 @@ class LyricsViewerViewModel(
                 localSongId = null,
                 rawLyrics = raw,
                 lines = cleaned,
+                selectedLineIndices = emptySet(),
+                selectionWarning = null,
                 isLoading = false
             )
         }
@@ -64,7 +69,7 @@ class LyricsViewerViewModel(
                     val matchingIndices = cleaned.filter {
                         it.text.contains(highlightSnippetText, ignoreCase = true) ||
                                 highlightSnippetText.contains(it.text, ignoreCase = true)
-                    }.map { it.index }.toSet()
+                    }.map { it.index }.take(2).toSet()
                     matchingIndices
                 } else {
                     emptySet()
@@ -80,6 +85,7 @@ class LyricsViewerViewModel(
                         rawLyrics = song.plainLyrics,
                         lines = cleaned,
                         selectedLineIndices = preSelected,
+                        selectionWarning = null,
                         isRandomPool = song.isRandomPool,
                         isLoading = false
                     )
@@ -115,22 +121,34 @@ class LyricsViewerViewModel(
 
     fun toggleLineSelection(index: Int) {
         _uiState.update { state ->
-            val newSelection = if (state.selectedLineIndices.contains(index)) {
-                state.selectedLineIndices - index
+            if (state.selectedLineIndices.contains(index)) {
+                state.copy(
+                    selectedLineIndices = state.selectedLineIndices - index,
+                    selectionWarning = null
+                )
             } else {
-                state.selectedLineIndices + index
+                if (state.selectedLineIndices.size >= 2) {
+                    state.copy(selectionWarning = "Maximum 2 lines can be selected")
+                } else {
+                    state.copy(
+                        selectedLineIndices = state.selectedLineIndices + index,
+                        selectionWarning = null
+                    )
+                }
             }
-            state.copy(selectedLineIndices = newSelection)
         }
     }
 
-    fun saveSelectedSnippets(context: android.content.Context? = null, onSuccess: () -> Unit) {
+    fun saveSelectedSnippets(context: Context? = null, onSuccess: () -> Unit) {
         val state = _uiState.value
         val selectedTexts = state.selectedLineIndices
             .sorted()
             .mapNotNull { idx -> state.lines.getOrNull(idx)?.text }
 
         if (selectedTexts.isEmpty()) return
+
+        // Join selected lines (1 or 2 lines) into a single snippet
+        val combinedSnippet = selectedTexts.joinToString("\n")
 
         viewModelScope.launch {
             repository.saveSongWithSnippets(
@@ -139,17 +157,17 @@ class LyricsViewerViewModel(
                 album = state.album,
                 plainLyrics = state.rawLyrics,
                 lrclibId = state.lrclibId,
-                snippets = selectedTexts,
+                snippets = listOf(combinedSnippet),
                 isRandomPool = false,
                 existingSongId = state.localSongId
             )
             _uiState.update { it.copy(isSaved = true) }
-            context?.let { com.widgy.lyrics.widget.WidgetUpdateManager.updateAllWidgets(it) }
+            context?.let { WidgetUpdateManager.updateAllWidgets(it) }
             onSuccess()
         }
     }
 
-    fun saveAsRandomPool(context: android.content.Context? = null, onSuccess: () -> Unit) {
+    fun saveAsRandomPool(context: Context? = null, onSuccess: () -> Unit) {
         val state = _uiState.value
         viewModelScope.launch {
             repository.saveSongWithSnippets(
@@ -163,7 +181,7 @@ class LyricsViewerViewModel(
                 existingSongId = state.localSongId
             )
             _uiState.update { it.copy(isSaved = true) }
-            context?.let { com.widgy.lyrics.widget.WidgetUpdateManager.updateAllWidgets(it) }
+            context?.let { WidgetUpdateManager.updateAllWidgets(it) }
             onSuccess()
         }
     }

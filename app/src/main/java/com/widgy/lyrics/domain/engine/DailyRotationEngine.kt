@@ -97,8 +97,10 @@ class DailyRotationEngine(
                 val lineText = if (cleanedLines.isNotEmpty()) {
                     val epochDay = date.toEpochDay()
                     val rawHash = (epochDay * 17 + seed + (if (forceRefresh) Random.nextInt(100) else 0)).hashCode().toLong()
-                    val lineIndex = (rawHash and 0x7FFFFFFFL).toInt() % cleanedLines.size
-                    cleanedLines[lineIndex].text
+                    val startIndex = (rawHash and 0x7FFFFFFFL).toInt() % cleanedLines.size
+                    val lineCount = if (cleanedLines.size > 1 && Random.nextBoolean()) 2 else 1
+                    val endIndex = (startIndex + lineCount).coerceAtMost(cleanedLines.size)
+                    cleanedLines.subList(startIndex, endIndex).joinToString("\n") { it.text }
                 } else {
                     selectedCandidate.song.title
                 }

@@ -103,7 +103,12 @@ fun LyricsViewerScreen(
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(10.dp)
                         ) {
-                            Text("Save (${state.selectedLineIndices.size})", fontSize = 12.sp, maxLines = 1)
+                            val lineCount = state.selectedLineIndices.size
+                            Text(
+                                text = if (lineCount == 1) "Save (1 line)" else "Save (2 lines)",
+                                fontSize = 12.sp,
+                                maxLines = 1
+                            )
                         }
                     }
                 }
@@ -141,11 +146,19 @@ fun LyricsViewerScreen(
                     ) {
                         item {
                             Text(
-                                text = "Tap lines to select specific favorites, or tap 'Random Pool' below to rotate a random line daily.",
+                                text = "Tap 1 or 2 lines to curate your daily lyric snippet, or choose Random Pool below.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.outline,
                                 modifier = Modifier.padding(vertical = 8.dp)
                             )
+                            if (state.selectionWarning != null) {
+                                Text(
+                                    text = state.selectionWarning ?: "",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.padding(bottom = 6.dp)
+                                )
+                            }
                         }
                         items(state.lines) { line ->
                             val isSelected = state.selectedLineIndices.contains(line.index)
