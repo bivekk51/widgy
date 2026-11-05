@@ -37,6 +37,8 @@ fun WidgyNavGraph(
     initialSongId: Long? = null,
     initialSnippetText: String? = null
 ) {
+    val context = LocalContext.current
+    val dashboardViewModel = remember { DashboardViewModel(repository, context) }
     var selectedOnlineTrack = remember { mutableListOf<LrcTrackDto>() }
 
     // Start at DASHBOARD so back press always brings user to Dashboard
@@ -45,8 +47,6 @@ fun WidgyNavGraph(
         startDestination = NavRoutes.DASHBOARD
     ) {
         composable(NavRoutes.DASHBOARD) {
-            val dashboardViewModel = remember { DashboardViewModel(repository) }
-
             // If launched with deep link, navigate to the target song on top of dashboard
             LaunchedEffect(initialSongId) {
                 if (initialSongId != null && initialSongId > 0) {
@@ -63,13 +63,14 @@ fun WidgyNavGraph(
         }
 
         composable(NavRoutes.THEME_STUDIO) {
-            val context = LocalContext.current
-            val dashboardViewModel = remember { DashboardViewModel(repository, context) }
             val uiState by dashboardViewModel.uiState.collectAsState()
 
             ThemeStudioScreen(
                 initialConfig = uiState.widgetConfig,
                 dailyLyric = uiState.todayLyric,
+                onConfigChanged = { updatedConfig ->
+                    dashboardViewModel.updateWidgetConfig(updatedConfig, context)
+                },
                 onApplyConfig = { newConfig ->
                     dashboardViewModel.updateWidgetConfig(newConfig, context)
                     navController.popBackStack()

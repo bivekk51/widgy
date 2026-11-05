@@ -26,10 +26,15 @@ enum class WidgetAttribution(val displayName: String) {
     SONG_AND_ARTIST("Song & Artist")  // "— Song • Artist"
 }
 
-enum class WidgetFontSize(val displayName: String, val sizeSp: Int) {
-    REGULAR("Medium", 20),
-    LARGE("Large", 23),
-    EXTRA_LARGE("Extra Large", 26)
+enum class WidgetFontSize(
+    val displayName: String,
+    val sizeSp: Int,
+    val lineHeightSp: Int
+) {
+    REGULAR("Medium", 20, 27),
+    LARGE("Large", 24, 32),
+    EXTRA_LARGE("Extra Large", 28, 36),
+    JUMBO("Jumbo", 32, 40)
 }
 
 data class WidgetConfig(

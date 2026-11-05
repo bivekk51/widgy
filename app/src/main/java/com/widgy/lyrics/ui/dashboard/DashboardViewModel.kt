@@ -53,6 +53,11 @@ class DashboardViewModel(
         }
     }
 
+    fun reloadConfig(context: Context) {
+        val config = WidgetPreferences(context).getConfig()
+        _uiState.update { it.copy(widgetConfig = config) }
+    }
+
     fun refreshTodayLyric(context: Context? = null) {
         _uiState.update { it.copy(isRefreshingLyric = true) }
         viewModelScope.launch {

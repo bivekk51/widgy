@@ -42,6 +42,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -77,6 +78,11 @@ fun DashboardScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+
+    LaunchedEffect(Unit) {
+        viewModel.reloadConfig(context)
+        viewModel.loadTodayLyric()
+    }
 
     Scaffold(
         topBar = {
@@ -284,12 +290,13 @@ private fun TodayLyricLiveCard(
                         textAlign = TextAlign.Center
                     )
                 } else {
+                    val clean = dailyLyric.text.trim().trim('"', '“', '”', '‘', '’')
                     val formatted = when (config.template) {
-                        WidgetTemplate.GENIUS -> "“${dailyLyric.text.uppercase()}”"
-                        WidgetTemplate.SPOTIFY -> "“${dailyLyric.text}”"
-                        WidgetTemplate.CLASSIC -> "“${dailyLyric.text}”"
-                        WidgetTemplate.TERMINAL -> "> ${dailyLyric.text}"
-                        WidgetTemplate.MINIMAL -> dailyLyric.text
+                        WidgetTemplate.GENIUS -> "“${clean.uppercase()}”"
+                        WidgetTemplate.SPOTIFY -> "“$clean”"
+                        WidgetTemplate.CLASSIC -> "“$clean”"
+                        WidgetTemplate.TERMINAL -> "> $clean"
+                        WidgetTemplate.MINIMAL -> clean
                     }
 
                     val textColor = when (config.template) {
@@ -315,6 +322,7 @@ private fun TodayLyricLiveCard(
                         text = formatted,
                         color = textColor,
                         fontSize = config.fontSize.sizeSp.sp,
+                        lineHeight = config.fontSize.lineHeightSp.sp,
                         fontWeight = fontWeight,
                         fontStyle = fontStyle,
                         fontFamily = finalFontFamily,

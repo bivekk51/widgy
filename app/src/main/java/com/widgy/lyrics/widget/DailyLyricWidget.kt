@@ -147,12 +147,13 @@ private fun WidgetContent(context: Context, dailyLyric: DailyLyric?, config: Wid
                     )
                 )
             } else {
+                val cleanText = dailyLyric.text.trim().trim('"', '“', '”', '‘', '’')
                 val formattedText = when (config.template) {
-                    WidgetTemplate.GENIUS -> "“${dailyLyric.text.uppercase()}”"
-                    WidgetTemplate.SPOTIFY -> "“${dailyLyric.text}”"
-                    WidgetTemplate.CLASSIC -> "“${dailyLyric.text}”"
-                    WidgetTemplate.TERMINAL -> "> ${dailyLyric.text}"
-                    WidgetTemplate.MINIMAL -> dailyLyric.text
+                    WidgetTemplate.GENIUS -> "“${cleanText.uppercase()}”"
+                    WidgetTemplate.SPOTIFY -> "“$cleanText”"
+                    WidgetTemplate.CLASSIC -> "“$cleanText”"
+                    WidgetTemplate.TERMINAL -> "> $cleanText"
+                    WidgetTemplate.MINIMAL -> cleanText
                 }
 
                 val glanceFontFamily = when (config.fontFamily) {

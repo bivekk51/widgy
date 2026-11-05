@@ -65,10 +65,16 @@ import com.widgy.lyrics.domain.model.DailyLyric
 fun ThemeStudioScreen(
     initialConfig: WidgetConfig,
     dailyLyric: DailyLyric?,
+    onConfigChanged: (WidgetConfig) -> Unit = {},
     onApplyConfig: (WidgetConfig) -> Unit,
     onBack: () -> Unit
 ) {
     var config by remember { mutableStateOf(initialConfig) }
+
+    fun update(newConfig: WidgetConfig) {
+        config = newConfig
+        onConfigChanged(newConfig)
+    }
 
     // Fallback sample lyric if none curated yet
     val previewLyric = dailyLyric ?: DailyLyric(
@@ -178,9 +184,11 @@ fun ThemeStudioScreen(
                                     WidgetTemplate.TERMINAL -> WidgetFontFamily.MONOSPACE
                                     else -> WidgetFontFamily.SYSTEM
                                 }
-                                config = config.copy(
-                                    template = template,
-                                    fontFamily = autoFont
+                                update(
+                                    config.copy(
+                                        template = template,
+                                        fontFamily = autoFont
+                                    )
                                 )
                             }
                         )
@@ -221,7 +229,7 @@ fun ThemeStudioScreen(
                                 items(WidgetFontFamily.values()) { font ->
                                     FilterChip(
                                         selected = config.fontFamily == font,
-                                        onClick = { config = config.copy(fontFamily = font) },
+                                        onClick = { update(config.copy(fontFamily = font)) },
                                         label = { Text(font.displayName) },
                                         shape = RoundedCornerShape(10.dp)
                                     )
@@ -240,7 +248,7 @@ fun ThemeStudioScreen(
                                 items(WidgetFontSize.values()) { size ->
                                     FilterChip(
                                         selected = config.fontSize == size,
-                                        onClick = { config = config.copy(fontSize = size) },
+                                        onClick = { update(config.copy(fontSize = size)) },
                                         label = { Text("${size.displayName} (${size.sizeSp}sp)") },
                                         shape = RoundedCornerShape(10.dp)
                                     )
@@ -259,7 +267,7 @@ fun ThemeStudioScreen(
                                 items(WidgetAttribution.values()) { attr ->
                                     FilterChip(
                                         selected = config.attribution == attr,
-                                        onClick = { config = config.copy(attribution = attr) },
+                                        onClick = { update(config.copy(attribution = attr)) },
                                         label = { Text(attr.displayName) },
                                         shape = RoundedCornerShape(10.dp)
                                     )
@@ -300,12 +308,13 @@ private fun LiveWidgetPreviewCard(
         }
     }
 
+    val clean = lyric.text.trim().trim('"', '“', '”', '‘', '’')
     val formatted = when (config.template) {
-        WidgetTemplate.GENIUS -> "“${lyric.text.uppercase()}”"
-        WidgetTemplate.SPOTIFY -> "“${lyric.text}”"
-        WidgetTemplate.CLASSIC -> "“${lyric.text}”"
-        WidgetTemplate.TERMINAL -> "> ${lyric.text}"
-        WidgetTemplate.MINIMAL -> lyric.text
+        WidgetTemplate.GENIUS -> "“${clean.uppercase()}”"
+        WidgetTemplate.SPOTIFY -> "“$clean”"
+        WidgetTemplate.CLASSIC -> "“$clean”"
+        WidgetTemplate.TERMINAL -> "> $clean"
+        WidgetTemplate.MINIMAL -> clean
     }
 
     val textColor = when (config.template) {
@@ -389,6 +398,7 @@ private fun LiveWidgetPreviewCard(
                     text = formatted,
                     color = textColor,
                     fontSize = config.fontSize.sizeSp.sp,
+                    lineHeight = config.fontSize.lineHeightSp.sp,
                     fontWeight = fontWeight,
                     fontStyle = fontStyle,
                     fontFamily = finalFontFamily,

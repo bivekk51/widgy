@@ -10,12 +10,22 @@ import com.widgy.lyrics.data.db.AppDatabase
 import com.widgy.lyrics.data.repository.LyricsRepository
 import com.widgy.lyrics.ui.navigation.WidgyNavGraph
 import com.widgy.lyrics.widget.WidgetUpdateManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
     companion object {
         const val EXTRA_SONG_ID = "extra_song_id"
         const val EXTRA_SNIPPET_TEXT = "extra_snippet_text"
+    }
+
+    override fun onResume() {
+        super.onResume()
+        CoroutineScope(Dispatchers.IO).launch {
+            WidgetUpdateManager.updateAllWidgets(this@MainActivity)
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
