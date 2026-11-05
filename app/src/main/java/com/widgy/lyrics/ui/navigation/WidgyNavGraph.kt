@@ -2,7 +2,10 @@ package com.widgy.lyrics.ui.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -16,10 +19,12 @@ import com.widgy.lyrics.ui.lyrics.LyricsViewerScreen
 import com.widgy.lyrics.ui.lyrics.LyricsViewerViewModel
 import com.widgy.lyrics.ui.search.SearchScreen
 import com.widgy.lyrics.ui.search.SearchViewModel
+import com.widgy.lyrics.ui.theme.ThemeStudioScreen
 
 object NavRoutes {
     const val DASHBOARD = "dashboard"
     const val SEARCH = "search"
+    const val THEME_STUDIO = "theme_studio"
     const val LYRICS_LOCAL = "lyrics_local/{songId}"
 
     fun lyricsLocal(songId: Long) = "lyrics_local/$songId"
@@ -52,7 +57,24 @@ fun WidgyNavGraph(
             DashboardScreen(
                 viewModel = dashboardViewModel,
                 onAddSongClick = { navController.navigate(NavRoutes.SEARCH) },
-                onSongClick = { songId -> navController.navigate(NavRoutes.lyricsLocal(songId)) }
+                onSongClick = { songId -> navController.navigate(NavRoutes.lyricsLocal(songId)) },
+                onChangeThemeClick = { navController.navigate(NavRoutes.THEME_STUDIO) }
+            )
+        }
+
+        composable(NavRoutes.THEME_STUDIO) {
+            val context = LocalContext.current
+            val dashboardViewModel = remember { DashboardViewModel(repository, context) }
+            val uiState by dashboardViewModel.uiState.collectAsState()
+
+            ThemeStudioScreen(
+                initialConfig = uiState.widgetConfig,
+                dailyLyric = uiState.todayLyric,
+                onApplyConfig = { newConfig ->
+                    dashboardViewModel.updateWidgetConfig(newConfig, context)
+                    navController.popBackStack()
+                },
+                onBack = { navController.popBackStack() }
             )
         }
 

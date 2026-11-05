@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -22,7 +23,10 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -58,6 +62,7 @@ import com.widgy.lyrics.data.db.SnippetEntity
 import com.widgy.lyrics.data.db.SongWithSnippets
 import com.widgy.lyrics.data.preferences.WidgetAttribution
 import com.widgy.lyrics.data.preferences.WidgetConfig
+import com.widgy.lyrics.data.preferences.WidgetFontFamily
 import com.widgy.lyrics.data.preferences.WidgetFontSize
 import com.widgy.lyrics.data.preferences.WidgetTemplate
 import com.widgy.lyrics.domain.model.DailyLyric
@@ -67,7 +72,8 @@ import com.widgy.lyrics.domain.model.DailyLyric
 fun DashboardScreen(
     viewModel: DashboardViewModel,
     onAddSongClick: () -> Unit,
-    onSongClick: (Long) -> Unit
+    onSongClick: (Long) -> Unit,
+    onChangeThemeClick: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
     val context = LocalContext.current
@@ -114,12 +120,29 @@ fun DashboardScreen(
             }
 
             item {
-                WidgetTemplateCustomizer(
-                    config = state.widgetConfig,
-                    onConfigChanged = { updated ->
-                        viewModel.updateWidgetConfig(updated, context)
-                    }
-                )
+                Button(
+                    onClick = onChangeThemeClick,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                ) {
+                    Icon(
+                        Icons.Default.Palette,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Customize Widget & Themes",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 14.sp
+                    )
+                }
             }
 
             item {
@@ -184,9 +207,21 @@ private fun TodayLyricLiveCard(
     onClick: () -> Unit
 ) {
     val cardBg = when (config.template) {
-        WidgetTemplate.GENIUS -> Color(0xFF0C0C0C)
-        WidgetTemplate.CLASSIC -> Color(0xFF161618)
-        WidgetTemplate.MINIMAL -> Color(0xFF1E1E22)
+        WidgetTemplate.GENIUS -> Color(0xFF0A0A0A)
+        WidgetTemplate.SPOTIFY -> Color(0xFF121212)
+        WidgetTemplate.CLASSIC -> Color(0xFF18181A)
+        WidgetTemplate.TERMINAL -> Color(0xFF0D1117)
+        WidgetTemplate.MINIMAL -> Color(0xFF000000)
+    }
+
+    val finalFontFamily = when (config.fontFamily) {
+        WidgetFontFamily.SERIF -> FontFamily.Serif
+        WidgetFontFamily.MONOSPACE -> FontFamily.Monospace
+        WidgetFontFamily.SYSTEM -> when (config.template) {
+            WidgetTemplate.CLASSIC -> FontFamily.Serif
+            WidgetTemplate.TERMINAL -> FontFamily.Monospace
+            else -> FontFamily.SansSerif
+        }
     }
 
     Card(
@@ -216,7 +251,11 @@ private fun TodayLyricLiveCard(
                         Icon(
                             Icons.Default.Refresh,
                             contentDescription = "Shuffle Lyric",
-                            tint = Color(0x99FFFFFF)
+                            tint = when (config.template) {
+                                WidgetTemplate.SPOTIFY -> Color(0xAA1ED760)
+                                WidgetTemplate.TERMINAL -> Color(0xAAFFB454)
+                                else -> Color(0x99FFFFFF)
+                            }
                         )
                     }
                 }
@@ -247,132 +286,73 @@ private fun TodayLyricLiveCard(
                 } else {
                     val formatted = when (config.template) {
                         WidgetTemplate.GENIUS -> "“${dailyLyric.text.uppercase()}”"
-                        else -> "“${dailyLyric.text}”"
+                        WidgetTemplate.SPOTIFY -> "“${dailyLyric.text}”"
+                        WidgetTemplate.CLASSIC -> "“${dailyLyric.text}”"
+                        WidgetTemplate.TERMINAL -> "> ${dailyLyric.text}"
+                        WidgetTemplate.MINIMAL -> dailyLyric.text
+                    }
+
+                    val textColor = when (config.template) {
+                        WidgetTemplate.SPOTIFY -> Color.White
+                        WidgetTemplate.TERMINAL -> Color(0xFFFFB454)
+                        WidgetTemplate.CLASSIC -> Color(0xFFF2F2F7)
+                        WidgetTemplate.MINIMAL -> Color(0xFFEBEBF0)
+                        else -> Color.White
                     }
 
                     val fontStyle = when (config.template) {
-                        WidgetTemplate.GENIUS -> MaterialTheme.typography.titleLarge.copy(
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.SansSerif,
-                            fontSize = config.fontSize.sizeSp.sp,
-                            textAlign = TextAlign.Center
-                        )
-                        WidgetTemplate.CLASSIC -> MaterialTheme.typography.titleLarge.copy(
-                            color = Color(0xFFF2F2F7),
-                            fontStyle = FontStyle.Italic,
-                            fontFamily = FontFamily.Serif,
-                            fontSize = config.fontSize.sizeSp.sp,
-                            textAlign = TextAlign.Center
-                        )
-                        WidgetTemplate.MINIMAL -> MaterialTheme.typography.titleLarge.copy(
-                            color = Color.White,
-                            fontWeight = FontWeight.Medium,
-                            fontFamily = FontFamily.SansSerif,
-                            fontSize = config.fontSize.sizeSp.sp,
-                            textAlign = TextAlign.Center
-                        )
+                        WidgetTemplate.CLASSIC -> FontStyle.Italic
+                        else -> FontStyle.Normal
+                    }
+
+                    val fontWeight = when (config.template) {
+                        WidgetTemplate.GENIUS, WidgetTemplate.SPOTIFY -> FontWeight.Bold
+                        WidgetTemplate.MINIMAL -> FontWeight.Normal
+                        else -> FontWeight.Medium
                     }
 
                     Text(
                         text = formatted,
-                        style = fontStyle,
+                        color = textColor,
+                        fontSize = config.fontSize.sizeSp.sp,
+                        fontWeight = fontWeight,
+                        fontStyle = fontStyle,
+                        fontFamily = finalFontFamily,
                         textAlign = TextAlign.Center
                     )
 
                     val attribution = when (config.attribution) {
                         WidgetAttribution.NONE -> null
-                        WidgetAttribution.ARTIST_ONLY -> "— ${dailyLyric.artistName}"
-                        WidgetAttribution.SONG_AND_ARTIST -> "— ${dailyLyric.songTitle} • ${dailyLyric.artistName}"
+                        WidgetAttribution.ARTIST_ONLY -> when (config.template) {
+                            WidgetTemplate.SPOTIFY -> "♫ ${dailyLyric.artistName}"
+                            WidgetTemplate.TERMINAL -> "$ ${dailyLyric.artistName}"
+                            else -> "— ${dailyLyric.artistName}"
+                        }
+                        WidgetAttribution.SONG_AND_ARTIST -> when (config.template) {
+                            WidgetTemplate.SPOTIFY -> "♫ ${dailyLyric.songTitle} • ${dailyLyric.artistName}"
+                            WidgetTemplate.TERMINAL -> "$ ${dailyLyric.songTitle} :: ${dailyLyric.artistName}"
+                            else -> "— ${dailyLyric.songTitle} • ${dailyLyric.artistName}"
+                        }
+                    }
+
+                    val attributionColor = when (config.template) {
+                        WidgetTemplate.SPOTIFY -> Color(0xFF1ED760)
+                        WidgetTemplate.TERMINAL -> Color(0xFFE5A93C)
+                        WidgetTemplate.MINIMAL -> Color(0xFF636366)
+                        else -> Color(0xFF8E8E93)
                     }
 
                     if (attribution != null) {
                         Spacer(modifier = Modifier.height(10.dp))
                         Text(
                             text = attribution,
-                            color = Color(0xFF8E8E93),
+                            color = attributionColor,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium,
+                            fontFamily = if (config.template == WidgetTemplate.TERMINAL) FontFamily.Monospace else FontFamily.SansSerif,
                             textAlign = TextAlign.Center
                         )
                     }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun WidgetTemplateCustomizer(
-    config: WidgetConfig,
-    onConfigChanged: (WidgetConfig) -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
-        )
-    ) {
-        Column(modifier = Modifier.padding(14.dp)) {
-            Text(
-                text = "Widget Style & Template",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Template Style Row
-            Text(
-                text = "Template",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(WidgetTemplate.values()) { template ->
-                    FilterChip(
-                        selected = config.template == template,
-                        onClick = { onConfigChanged(config.copy(template = template)) },
-                        label = { Text(template.displayName) }
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Attribution Row
-            Text(
-                text = "Footer Display",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(WidgetAttribution.values()) { attr ->
-                    FilterChip(
-                        selected = config.attribution == attr,
-                        onClick = { onConfigChanged(config.copy(attribution = attr)) },
-                        label = { Text(attr.displayName) }
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Font Size Row
-            Text(
-                text = "Font Size",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(WidgetFontSize.values()) { size ->
-                    FilterChip(
-                        selected = config.fontSize == size,
-                        onClick = { onConfigChanged(config.copy(fontSize = size)) },
-                        label = { Text(size.displayName) }
-                    )
                 }
             }
         }

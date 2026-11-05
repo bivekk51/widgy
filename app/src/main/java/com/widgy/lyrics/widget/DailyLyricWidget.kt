@@ -38,6 +38,7 @@ import com.widgy.lyrics.MainActivity
 import com.widgy.lyrics.data.db.AppDatabase
 import com.widgy.lyrics.data.preferences.WidgetAttribution
 import com.widgy.lyrics.data.preferences.WidgetConfig
+import com.widgy.lyrics.data.preferences.WidgetFontFamily
 import com.widgy.lyrics.data.preferences.WidgetPreferences
 import com.widgy.lyrics.data.preferences.WidgetTemplate
 import com.widgy.lyrics.data.repository.LyricsRepository
@@ -70,11 +71,13 @@ private fun WidgetContent(context: Context, dailyLyric: DailyLyric?, config: Wid
         }
     }
 
-    // Card background based on chosen template
+    // Card styling based on chosen template
     val bgColor = when (config.template) {
-        WidgetTemplate.GENIUS -> Color(0xFF0C0C0C) // Deep pitch black like Genius card
-        WidgetTemplate.CLASSIC -> Color(0xFF161618)
-        WidgetTemplate.MINIMAL -> Color(0xFF1E1E22)
+        WidgetTemplate.GENIUS -> Color(0xFF0A0A0A)
+        WidgetTemplate.SPOTIFY -> Color(0xFF121212)
+        WidgetTemplate.CLASSIC -> Color(0xFF18181A)
+        WidgetTemplate.TERMINAL -> Color(0xFF0D1117)
+        WidgetTemplate.MINIMAL -> Color(0xFF000000)
     }
 
     Box(
@@ -101,7 +104,13 @@ private fun WidgetContent(context: Context, dailyLyric: DailyLyric?, config: Wid
                 Text(
                     text = "↻",
                     style = TextStyle(
-                        color = ColorProvider(Color(0x88FFFFFF)),
+                        color = ColorProvider(
+                            when (config.template) {
+                                WidgetTemplate.SPOTIFY -> Color(0xAA1ED760)
+                                WidgetTemplate.TERMINAL -> Color(0xAAFFB454)
+                                else -> Color(0x88FFFFFF)
+                            }
+                        ),
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -139,35 +148,61 @@ private fun WidgetContent(context: Context, dailyLyric: DailyLyric?, config: Wid
                 )
             } else {
                 val formattedText = when (config.template) {
-                    WidgetTemplate.GENIUS -> {
-                        // Genius style: all-caps, clean bold quotation
-                        val uppercase = dailyLyric.text.uppercase()
-                        "“$uppercase”"
-                    }
+                    WidgetTemplate.GENIUS -> "“${dailyLyric.text.uppercase()}”"
+                    WidgetTemplate.SPOTIFY -> "“${dailyLyric.text}”"
                     WidgetTemplate.CLASSIC -> "“${dailyLyric.text}”"
-                    WidgetTemplate.MINIMAL -> "“${dailyLyric.text}”"
+                    WidgetTemplate.TERMINAL -> "> ${dailyLyric.text}"
+                    WidgetTemplate.MINIMAL -> dailyLyric.text
                 }
+
+                val glanceFontFamily = when (config.fontFamily) {
+                    WidgetFontFamily.SERIF -> FontFamily.Serif
+                    WidgetFontFamily.MONOSPACE -> FontFamily.Monospace
+                    WidgetFontFamily.SYSTEM -> when (config.template) {
+                        WidgetTemplate.CLASSIC -> FontFamily.Serif
+                        WidgetTemplate.TERMINAL -> FontFamily.Monospace
+                        else -> FontFamily.SansSerif
+                    }
+                }
+
+                val finalFontFamily = if (config.template == WidgetTemplate.TERMINAL) {
+                    FontFamily.Monospace
+                } else glanceFontFamily
 
                 val textStyle = when (config.template) {
                     WidgetTemplate.GENIUS -> TextStyle(
                         color = ColorProvider(Color(0xFFFFFFFF)),
                         fontSize = config.fontSize.sizeSp.sp,
                         fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.SansSerif,
+                        fontFamily = finalFontFamily,
+                        textAlign = TextAlign.Center
+                    )
+                    WidgetTemplate.SPOTIFY -> TextStyle(
+                        color = ColorProvider(Color(0xFFFFFFFF)),
+                        fontSize = config.fontSize.sizeSp.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = finalFontFamily,
                         textAlign = TextAlign.Center
                     )
                     WidgetTemplate.CLASSIC -> TextStyle(
                         color = ColorProvider(Color(0xFFF2F2F7)),
                         fontSize = config.fontSize.sizeSp.sp,
                         fontStyle = FontStyle.Italic,
-                        fontFamily = FontFamily.Serif,
+                        fontFamily = finalFontFamily,
+                        textAlign = TextAlign.Center
+                    )
+                    WidgetTemplate.TERMINAL -> TextStyle(
+                        color = ColorProvider(Color(0xFFFFB454)),
+                        fontSize = config.fontSize.sizeSp.sp,
+                        fontWeight = FontWeight.Medium,
+                        fontFamily = FontFamily.Monospace,
                         textAlign = TextAlign.Center
                     )
                     WidgetTemplate.MINIMAL -> TextStyle(
-                        color = ColorProvider(Color(0xFFFFFFFF)),
+                        color = ColorProvider(Color(0xFFEBEBF0)),
                         fontSize = config.fontSize.sizeSp.sp,
-                        fontWeight = FontWeight.Medium,
-                        fontFamily = FontFamily.SansSerif,
+                        fontWeight = FontWeight.Normal,
+                        fontFamily = finalFontFamily,
                         textAlign = TextAlign.Center
                     )
                 }
@@ -181,8 +216,23 @@ private fun WidgetContent(context: Context, dailyLyric: DailyLyric?, config: Wid
                 // Optional Attribution Footer
                 val attributionText = when (config.attribution) {
                     WidgetAttribution.NONE -> null
-                    WidgetAttribution.ARTIST_ONLY -> "— ${dailyLyric.artistName}"
-                    WidgetAttribution.SONG_AND_ARTIST -> "— ${dailyLyric.songTitle} • ${dailyLyric.artistName}"
+                    WidgetAttribution.ARTIST_ONLY -> when (config.template) {
+                        WidgetTemplate.SPOTIFY -> "♫ ${dailyLyric.artistName}"
+                        WidgetTemplate.TERMINAL -> "$ ${dailyLyric.artistName}"
+                        else -> "— ${dailyLyric.artistName}"
+                    }
+                    WidgetAttribution.SONG_AND_ARTIST -> when (config.template) {
+                        WidgetTemplate.SPOTIFY -> "♫ ${dailyLyric.songTitle} • ${dailyLyric.artistName}"
+                        WidgetTemplate.TERMINAL -> "$ ${dailyLyric.songTitle} :: ${dailyLyric.artistName}"
+                        else -> "— ${dailyLyric.songTitle} • ${dailyLyric.artistName}"
+                    }
+                }
+
+                val attributionColor = when (config.template) {
+                    WidgetTemplate.SPOTIFY -> Color(0xFF1ED760)
+                    WidgetTemplate.TERMINAL -> Color(0xFFE5A93C)
+                    WidgetTemplate.MINIMAL -> Color(0xFF636366)
+                    else -> Color(0xFF8E8E93)
                 }
 
                 if (attributionText != null) {
@@ -190,9 +240,10 @@ private fun WidgetContent(context: Context, dailyLyric: DailyLyric?, config: Wid
                     Text(
                         text = attributionText,
                         style = TextStyle(
-                            color = ColorProvider(Color(0xFF8E8E93)),
+                            color = ColorProvider(attributionColor),
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Medium,
+                            fontFamily = if (config.template == WidgetTemplate.TERMINAL) FontFamily.Monospace else FontFamily.SansSerif,
                             textAlign = TextAlign.Center
                         ),
                         maxLines = 1
