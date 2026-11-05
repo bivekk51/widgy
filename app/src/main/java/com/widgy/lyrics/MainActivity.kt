@@ -10,6 +10,7 @@ import androidx.navigation.compose.rememberNavController
 import com.widgy.lyrics.data.db.AppDatabase
 import com.widgy.lyrics.data.repository.LyricsRepository
 import com.widgy.lyrics.ui.navigation.WidgyNavGraph
+import com.widgy.lyrics.ui.theme.WidgyTheme
 import com.widgy.lyrics.widget.WidgetUpdateManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -44,7 +45,7 @@ class MainActivity : ComponentActivity() {
         extractSongFromIntent(intent)
 
         setContent {
-            MaterialTheme {
+            WidgyTheme {
                 val navController = rememberNavController()
                 WidgyNavGraph(
                     navController = navController,
