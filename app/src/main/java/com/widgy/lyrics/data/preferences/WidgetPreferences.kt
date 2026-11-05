@@ -69,7 +69,7 @@ class WidgetPreferences(context: Context) {
             .putString("cached_lyric_title", lyric.songTitle)
             .putString("cached_lyric_artist", lyric.artistName)
             .putLong("cached_lyric_song_id", lyric.songId)
-            .apply()
+            .commit()
     }
 
     fun getConfig(): WidgetConfig {
@@ -100,6 +100,6 @@ class WidgetPreferences(context: Context) {
             .putString("font_family", config.fontFamily.name)
             .putString("attribution", config.attribution.name)
             .putString("font_size", config.fontSize.name)
-            .apply()
+            .commit()
     }
 }

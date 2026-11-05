@@ -1,10 +1,10 @@
 package com.widgy.lyrics.widget
 
 import android.content.Context
-import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.widgy.lyrics.data.db.AppDatabase
+import com.widgy.lyrics.data.preferences.WidgetPreferences
 import com.widgy.lyrics.data.repository.LyricsRepository
 
 class DailyWidgetWorker(
@@ -16,14 +16,11 @@ class DailyWidgetWorker(
         return try {
             val db = AppDatabase.getDatabase(appContext)
             val repository = LyricsRepository(db)
-            repository.getTodayDailyLyric()
-
-            val glanceManager = GlanceAppWidgetManager(appContext)
-            val glanceIds = glanceManager.getGlanceIds(DailyLyricWidget::class.java)
-            val widget = DailyLyricWidget()
-            for (id in glanceIds) {
-                widget.update(appContext, id)
+            val dailyLyric = repository.getTodayDailyLyric()
+            if (dailyLyric != null) {
+                WidgetPreferences(appContext).saveCachedLyric(dailyLyric)
             }
+            WidgetUpdateManager.updateAllWidgets(appContext)
             Result.success()
         } catch (e: Exception) {
             Result.failure()

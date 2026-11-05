@@ -20,6 +20,7 @@ class WidgetPreferencesTest {
         every { context.getSharedPreferences("widget_prefs", Context.MODE_PRIVATE) } returns prefs
         every { prefs.edit() } returns editor
         every { editor.putString(any(), any()) } returns editor
+        every { editor.commit() } returns true
     }
 
     @Test
@@ -64,7 +65,7 @@ class WidgetPreferencesTest {
             editor.putString("font_family", WidgetFontFamily.MONOSPACE.name)
             editor.putString("attribution", WidgetAttribution.SONG_AND_ARTIST.name)
             editor.putString("font_size", WidgetFontSize.SMALL.name)
-            editor.apply()
+            editor.commit()
         }
     }
 }

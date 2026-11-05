@@ -54,25 +54,25 @@ class DailyLyricWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val db = AppDatabase.getDatabase(context)
         val repository = LyricsRepository(db)
-        val dailyLyric = repository.getTodayDailyLyric()
-        if (dailyLyric != null) {
-            WidgetPreferences(context).saveCachedLyric(dailyLyric)
+        val prefs = WidgetPreferences(context)
+        val cached = prefs.getCachedLyric()
+        val dailyLyric = repository.getTodayDailyLyric() ?: cached?.let {
+            DailyLyric(
+                date = "",
+                songId = it.songId,
+                snippetId = null,
+                text = it.text,
+                songTitle = it.songTitle,
+                artistName = it.artistName
+            )
         }
+        if (dailyLyric != null) {
+            prefs.saveCachedLyric(dailyLyric)
+        }
+        val config = prefs.getConfig()
 
         provideContent {
-            val config = WidgetPreferences(context).getConfig()
-            val cached = WidgetPreferences(context).getCachedLyric()
-            val lyricToDisplay = dailyLyric ?: cached?.let {
-                DailyLyric(
-                    date = "",
-                    songId = it.songId,
-                    snippetId = null,
-                    text = it.text,
-                    songTitle = it.songTitle,
-                    artistName = it.artistName
-                )
-            }
-            WidgetContent(context = context, dailyLyric = lyricToDisplay, config = config)
+            WidgetContent(context = context, dailyLyric = dailyLyric, config = config)
         }
     }
 }
@@ -283,7 +283,6 @@ class RefreshLyricActionCallback : ActionCallback {
         if (newLyric != null) {
             WidgetPreferences(context).saveCachedLyric(newLyric)
         }
-        DailyLyricWidget().update(context, glanceId)
         WidgetUpdateManager.updateAllWidgets(context)
     }
 }
