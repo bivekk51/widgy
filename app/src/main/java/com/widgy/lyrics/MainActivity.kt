@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.mutableStateOf
 import androidx.navigation.compose.rememberNavController
 import com.widgy.lyrics.data.db.AppDatabase
 import com.widgy.lyrics.data.repository.LyricsRepository
@@ -20,6 +21,9 @@ class MainActivity : ComponentActivity() {
         const val EXTRA_SONG_ID = "extra_song_id"
         const val EXTRA_SNIPPET_TEXT = "extra_snippet_text"
     }
+
+    private val targetSongId = mutableStateOf<Long?>(null)
+    private val targetSnippetText = mutableStateOf<String?>(null)
 
     override fun onResume() {
         super.onResume()
@@ -37,8 +41,7 @@ class MainActivity : ComponentActivity() {
         val db = AppDatabase.getDatabase(this)
         val repository = LyricsRepository(db)
 
-        val initialSongId = intent?.getLongExtra(EXTRA_SONG_ID, -1L)?.takeIf { it > 0 }
-        val initialSnippetText = intent?.getStringExtra(EXTRA_SNIPPET_TEXT)
+        extractSongFromIntent(intent)
 
         setContent {
             MaterialTheme {
@@ -46,8 +49,9 @@ class MainActivity : ComponentActivity() {
                 WidgyNavGraph(
                     navController = navController,
                     repository = repository,
-                    initialSongId = initialSongId,
-                    initialSnippetText = initialSnippetText
+                    targetSongId = targetSongId.value,
+                    onTargetSongConsumed = { targetSongId.value = null },
+                    initialSnippetText = targetSnippetText.value
                 )
             }
         }
@@ -56,5 +60,15 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        extractSongFromIntent(intent)
+    }
+
+    private fun extractSongFromIntent(intent: Intent?) {
+        val songId = intent?.getLongExtra(EXTRA_SONG_ID, -1L)?.takeIf { it > 0 }
+        val snippet = intent?.getStringExtra(EXTRA_SNIPPET_TEXT)
+        if (songId != null) {
+            targetSongId.value = songId
+            targetSnippetText.value = snippet
+        }
     }
 }

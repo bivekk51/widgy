@@ -34,12 +34,21 @@ object NavRoutes {
 fun WidgyNavGraph(
     navController: NavHostController,
     repository: LyricsRepository,
-    initialSongId: Long? = null,
+    targetSongId: Long? = null,
+    onTargetSongConsumed: () -> Unit = {},
     initialSnippetText: String? = null
 ) {
     val context = LocalContext.current
     val dashboardViewModel = remember { DashboardViewModel(repository, context) }
     var selectedOnlineTrack = remember { mutableListOf<LrcTrackDto>() }
+
+    // Reactively navigate when targetSongId is provided (cold launch or onNewIntent from widget)
+    LaunchedEffect(targetSongId) {
+        if (targetSongId != null && targetSongId > 0) {
+            onTargetSongConsumed()
+            navController.navigate(NavRoutes.lyricsLocal(targetSongId))
+        }
+    }
 
     // Start at DASHBOARD so back press always brings user to Dashboard
     NavHost(
@@ -47,13 +56,6 @@ fun WidgyNavGraph(
         startDestination = NavRoutes.DASHBOARD
     ) {
         composable(NavRoutes.DASHBOARD) {
-            // If launched with deep link, navigate to the target song on top of dashboard
-            LaunchedEffect(initialSongId) {
-                if (initialSongId != null && initialSongId > 0) {
-                    navController.navigate(NavRoutes.lyricsLocal(initialSongId))
-                }
-            }
-
             DashboardScreen(
                 viewModel = dashboardViewModel,
                 onAddSongClick = { navController.navigate(NavRoutes.SEARCH) },
