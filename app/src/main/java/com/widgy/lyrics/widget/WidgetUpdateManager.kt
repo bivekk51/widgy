@@ -1,6 +1,7 @@
 package com.widgy.lyrics.widget
 
 import android.content.Context
+import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
@@ -25,5 +26,18 @@ object WidgetUpdateManager {
             ExistingPeriodicWorkPolicy.KEEP,
             workRequest
         )
+    }
+
+    suspend fun updateAllWidgets(context: Context) {
+        try {
+            val glanceManager = GlanceAppWidgetManager(context)
+            val glanceIds = glanceManager.getGlanceIds(DailyLyricWidget::class.java)
+            val widget = DailyLyricWidget()
+            for (id in glanceIds) {
+                widget.update(context, id)
+            }
+        } catch (_: Exception) {
+            // Safely ignored if widget is not active
+        }
     }
 }

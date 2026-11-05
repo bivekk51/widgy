@@ -48,6 +48,7 @@ fun LyricsViewerScreen(
     onBack: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     Scaffold(
         topBar = {
@@ -88,7 +89,7 @@ fun LyricsViewerScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     OutlinedButton(
-                        onClick = { viewModel.saveAsRandomPool(onSaved) },
+                        onClick = { viewModel.saveAsRandomPool(context, onSaved) },
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(10.dp)
                     ) {
@@ -98,7 +99,7 @@ fun LyricsViewerScreen(
                     if (state.selectedLineIndices.isNotEmpty()) {
                         Spacer(modifier = Modifier.width(8.dp))
                         Button(
-                            onClick = { viewModel.saveSelectedSnippets(onSaved) },
+                            onClick = { viewModel.saveSelectedSnippets(context, onSaved) },
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(10.dp)
                         ) {

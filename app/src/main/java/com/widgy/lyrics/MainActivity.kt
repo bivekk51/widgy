@@ -15,6 +15,7 @@ class MainActivity : ComponentActivity() {
 
     companion object {
         const val EXTRA_SONG_ID = "extra_song_id"
+        const val EXTRA_SNIPPET_TEXT = "extra_snippet_text"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -27,6 +28,7 @@ class MainActivity : ComponentActivity() {
         val repository = LyricsRepository(db)
 
         val initialSongId = intent?.getLongExtra(EXTRA_SONG_ID, -1L)?.takeIf { it > 0 }
+        val initialSnippetText = intent?.getStringExtra(EXTRA_SNIPPET_TEXT)
 
         setContent {
             MaterialTheme {
@@ -34,7 +36,8 @@ class MainActivity : ComponentActivity() {
                 WidgyNavGraph(
                     navController = navController,
                     repository = repository,
-                    initialSongId = initialSongId
+                    initialSongId = initialSongId,
+                    initialSnippetText = initialSnippetText
                 )
             }
         }

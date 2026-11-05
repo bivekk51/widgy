@@ -19,4 +19,11 @@ class LyricsCleanerTest {
         val cleaned = LyricsCleaner.cleanLyrics(raw)
         assertEquals(listOf("Some line", "Another line"), cleaned.map { it.text })
     }
+
+    @Test
+    fun cleanLyrics_stripsLrcMetadataTags() {
+        val raw = "[ar:Kendrick Lamar]\n[ti:HUMBLE.]\n[al:DAMN.]\n[by:Spotify]\n[00:10.00]Nobody pray for me\n[00:12.00]Even a day for me"
+        val cleaned = LyricsCleaner.cleanLyrics(raw)
+        assertEquals(listOf("Nobody pray for me", "Even a day for me"), cleaned.map { it.text })
+    }
 }

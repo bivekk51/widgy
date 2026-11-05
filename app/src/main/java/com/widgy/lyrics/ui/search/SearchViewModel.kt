@@ -4,7 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.widgy.lyrics.data.api.LrcLibClient
 import com.widgy.lyrics.data.model.LrcTrackDto
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -31,6 +33,7 @@ class SearchViewModel(
     val uiState: StateFlow<SearchUiState> = _uiState.asStateFlow()
 
     private val queryFlow = MutableStateFlow("")
+    private var searchJob: Job? = null
 
     init {
         queryFlow
@@ -38,6 +41,7 @@ class SearchViewModel(
             .distinctUntilChanged()
             .onEach { q ->
                 if (q.isBlank()) {
+                    searchJob?.cancel()
                     _uiState.update { it.copy(results = emptyList(), isLoading = false, errorMessage = null) }
                 } else {
                     executeSearch(q)
@@ -52,17 +56,20 @@ class SearchViewModel(
     }
 
     private fun executeSearch(query: String) {
+        searchJob?.cancel()
         _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-        viewModelScope.launch {
+        searchJob = viewModelScope.launch {
             val result = client.searchTracks(query)
             result.onSuccess { tracks ->
                 _uiState.update { it.copy(isLoading = false, results = tracks, errorMessage = null) }
             }.onFailure { error ->
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        errorMessage = error.localizedMessage ?: "Failed to load tracks. Check connection."
-                    )
+                if (error !is CancellationException) {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = error.localizedMessage ?: "Failed to load tracks. Check connection."
+                        )
+                    }
                 }
             }
         }

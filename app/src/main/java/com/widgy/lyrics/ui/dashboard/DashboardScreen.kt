@@ -60,6 +60,7 @@ fun DashboardScreen(
     onSongClick: (Long) -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     Scaffold(
         topBar = {
@@ -94,7 +95,7 @@ fun DashboardScreen(
                 TodayLyricCard(
                     dailyLyric = state.todayLyric,
                     isRefreshing = state.isRefreshingLyric,
-                    onRefreshClick = { viewModel.refreshTodayLyric() },
+                    onRefreshClick = { viewModel.refreshTodayLyric(context) },
                     onClick = {
                         state.todayLyric?.let { onSongClick(it.songId) }
                     }
@@ -139,10 +140,10 @@ fun DashboardScreen(
                         songWithSnippets = songWithSnippets,
                         onSongClick = { onSongClick(songWithSnippets.song.id) },
                         onToggleSnippet = { snippetId, isActive ->
-                            viewModel.toggleSnippetActive(snippetId, isActive)
+                            viewModel.toggleSnippetActive(snippetId, isActive, context)
                         },
-                        onDeleteSong = { viewModel.deleteSong(songWithSnippets.song.id) },
-                        onDeleteSnippet = { snippetId -> viewModel.deleteSnippet(snippetId) }
+                        onDeleteSong = { viewModel.deleteSong(songWithSnippets.song.id, context) },
+                        onDeleteSnippet = { snippetId -> viewModel.deleteSnippet(snippetId, context) }
                     )
                 }
             }

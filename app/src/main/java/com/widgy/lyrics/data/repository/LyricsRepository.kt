@@ -44,17 +44,29 @@ class LyricsRepository(
         plainLyrics: String,
         lrclibId: Long?,
         snippets: List<String>,
-        isRandomPool: Boolean
+        isRandomPool: Boolean,
+        existingSongId: Long? = null
     ): Long {
-        val song = SongEntity(
-            title = title,
-            artist = artist,
-            album = album,
-            plainLyrics = plainLyrics,
-            lrclibId = lrclibId,
-            isRandomPool = isRandomPool
-        )
-        val songId = db.songDao().insertSong(song)
+        val songId = if (existingSongId != null && existingSongId > 0) {
+            val existing = db.songDao().getSongById(existingSongId)
+            if (existing != null) {
+                db.songDao().updateSong(
+                    existing.copy(
+                        title = title,
+                        artist = artist,
+                        album = album,
+                        plainLyrics = plainLyrics,
+                        isRandomPool = isRandomPool
+                    )
+                )
+                existingSongId
+            } else {
+                insertNewSong(title, artist, album, plainLyrics, lrclibId, isRandomPool)
+            }
+        } else {
+            insertNewSong(title, artist, album, plainLyrics, lrclibId, isRandomPool)
+        }
+
         if (snippets.isNotEmpty()) {
             val entities = snippets.map {
                 SnippetEntity(
@@ -66,6 +78,25 @@ class LyricsRepository(
             db.snippetDao().insertSnippets(entities)
         }
         return songId
+    }
+
+    private suspend fun insertNewSong(
+        title: String,
+        artist: String,
+        album: String?,
+        plainLyrics: String,
+        lrclibId: Long?,
+        isRandomPool: Boolean
+    ): Long {
+        val song = SongEntity(
+            title = title,
+            artist = artist,
+            album = album,
+            plainLyrics = plainLyrics,
+            lrclibId = lrclibId,
+            isRandomPool = isRandomPool
+        )
+        return db.songDao().insertSong(song)
     }
 
     suspend fun setSnippetActive(snippetId: Long, isActive: Boolean) {

@@ -76,7 +76,8 @@ class DailyRotationEngine(
             }
         } else {
             val epochDay = date.toEpochDay()
-            val index = abs((epochDay * 31 + seed).hashCode()) % candidates.size
+            val rawHash = (epochDay * 31 + seed).hashCode().toLong()
+            val index = (rawHash and 0x7FFFFFFFL).toInt() % candidates.size
             candidates[index]
         }
 
@@ -95,7 +96,8 @@ class DailyRotationEngine(
                 val cleanedLines = LyricsCleaner.cleanLyrics(selectedCandidate.song.plainLyrics)
                 val lineText = if (cleanedLines.isNotEmpty()) {
                     val epochDay = date.toEpochDay()
-                    val lineIndex = abs((epochDay * 17 + seed + (if (forceRefresh) Random.nextInt(100) else 0)).hashCode()) % cleanedLines.size
+                    val rawHash = (epochDay * 17 + seed + (if (forceRefresh) Random.nextInt(100) else 0)).hashCode().toLong()
+                    val lineIndex = (rawHash and 0x7FFFFFFFL).toInt() % cleanedLines.size
                     cleanedLines[lineIndex].text
                 } else {
                     selectedCandidate.song.title

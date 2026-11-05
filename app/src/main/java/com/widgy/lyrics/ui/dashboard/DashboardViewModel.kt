@@ -1,10 +1,12 @@
 package com.widgy.lyrics.ui.dashboard
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.widgy.lyrics.data.db.SongWithSnippets
 import com.widgy.lyrics.data.repository.LyricsRepository
 import com.widgy.lyrics.domain.model.DailyLyric
+import com.widgy.lyrics.widget.WidgetUpdateManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -43,31 +45,35 @@ class DashboardViewModel(
         }
     }
 
-    fun refreshTodayLyric() {
+    fun refreshTodayLyric(context: Context? = null) {
         _uiState.update { it.copy(isRefreshingLyric = true) }
         viewModelScope.launch {
             val newLyric = repository.refreshTodayLyric()
             _uiState.update { it.copy(todayLyric = newLyric, isRefreshingLyric = false) }
+            context?.let { WidgetUpdateManager.updateAllWidgets(it) }
         }
     }
 
-    fun toggleSnippetActive(snippetId: Long, isActive: Boolean) {
+    fun toggleSnippetActive(snippetId: Long, isActive: Boolean, context: Context? = null) {
         viewModelScope.launch {
             repository.setSnippetActive(snippetId, isActive)
+            context?.let { WidgetUpdateManager.updateAllWidgets(it) }
         }
     }
 
-    fun deleteSong(songId: Long) {
+    fun deleteSong(songId: Long, context: Context? = null) {
         viewModelScope.launch {
             repository.deleteSong(songId)
             loadTodayLyric()
+            context?.let { WidgetUpdateManager.updateAllWidgets(it) }
         }
     }
 
-    fun deleteSnippet(snippetId: Long) {
+    fun deleteSnippet(snippetId: Long, context: Context? = null) {
         viewModelScope.launch {
             repository.deleteSnippet(snippetId)
             loadTodayLyric()
+            context?.let { WidgetUpdateManager.updateAllWidgets(it) }
         }
     }
 }

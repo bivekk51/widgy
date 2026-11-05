@@ -1,6 +1,5 @@
 package com.widgy.lyrics.widget
 
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import androidx.compose.ui.unit.dp
@@ -8,12 +7,14 @@ import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
+import androidx.glance.LocalSize
 import androidx.glance.action.ActionParameters
-import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
+import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.action.ActionCallback
 import androidx.glance.appwidget.action.actionRunCallback
+import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
 import androidx.glance.layout.Alignment
@@ -37,6 +38,8 @@ import com.widgy.lyrics.domain.model.DailyLyric
 
 class DailyLyricWidget : GlanceAppWidget() {
 
+    override val sizeMode: SizeMode = SizeMode.Exact
+
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val db = AppDatabase.getDatabase(context)
         val repository = LyricsRepository(db)
@@ -52,10 +55,17 @@ class DailyLyricWidget : GlanceAppWidget() {
 
 @androidx.compose.runtime.Composable
 private fun WidgetContent(context: Context, dailyLyric: DailyLyric?) {
+    val size = LocalSize.current
+    val isCompact = size.height < 130.dp
+    val containerPadding = if (isCompact) 10.dp else 14.dp
+    val quoteMaxLines = if (isCompact) 2 else 4
+    val quoteFontSize = if (isCompact) 13.sp else 15.sp
+
     val clickIntent = Intent(context, MainActivity::class.java).apply {
         flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
         if (dailyLyric != null) {
             putExtra(MainActivity.EXTRA_SONG_ID, dailyLyric.songId)
+            putExtra(MainActivity.EXTRA_SNIPPET_TEXT, dailyLyric.text)
         }
     }
 
@@ -63,8 +73,8 @@ private fun WidgetContent(context: Context, dailyLyric: DailyLyric?) {
         modifier = GlanceModifier
             .fillMaxSize()
             .background(GlanceTheme.colors.surface)
-            .padding(14.dp)
-            .clickable(actionStartActivity(ComponentName(context, MainActivity::class.java))),
+            .padding(containerPadding)
+            .clickable(actionStartActivity(clickIntent)),
         contentAlignment = Alignment.Center
     ) {
         if (dailyLyric == null) {
@@ -76,7 +86,7 @@ private fun WidgetContent(context: Context, dailyLyric: DailyLyric?) {
                     text = "No lyrics curated yet",
                     style = TextStyle(
                         color = GlanceTheme.colors.onSurface,
-                        fontSize = 14.sp,
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.Medium
                     )
                 )
@@ -85,7 +95,7 @@ private fun WidgetContent(context: Context, dailyLyric: DailyLyric?) {
                     text = "Tap to search and add lyrics",
                     style = TextStyle(
                         color = GlanceTheme.colors.onSurfaceVariant,
-                        fontSize = 12.sp
+                        fontSize = 11.sp
                     )
                 )
             }
@@ -102,7 +112,7 @@ private fun WidgetContent(context: Context, dailyLyric: DailyLyric?) {
                         text = "DAILY LYRIC",
                         style = TextStyle(
                             color = GlanceTheme.colors.primary,
-                            fontSize = 10.sp,
+                            fontSize = 9.sp,
                             fontWeight = FontWeight.Bold
                         ),
                         modifier = GlanceModifier.defaultWeight()
@@ -111,33 +121,33 @@ private fun WidgetContent(context: Context, dailyLyric: DailyLyric?) {
                         text = "↻",
                         style = TextStyle(
                             color = GlanceTheme.colors.primary,
-                            fontSize = 16.sp,
+                            fontSize = 15.sp,
                             fontWeight = FontWeight.Bold
                         ),
-                        modifier = GlanceModifier.padding(4.dp).clickable(actionRunCallback<RefreshLyricActionCallback>())
+                        modifier = GlanceModifier.padding(2.dp).clickable(actionRunCallback<RefreshLyricActionCallback>())
                     )
                 }
 
-                Spacer(modifier = GlanceModifier.height(6.dp))
+                Spacer(modifier = GlanceModifier.height(4.dp))
 
                 Text(
                     text = "“${dailyLyric.text}”",
                     style = TextStyle(
                         color = GlanceTheme.colors.onSurface,
-                        fontSize = 15.sp,
+                        fontSize = quoteFontSize,
                         fontStyle = FontStyle.Italic,
                         fontFamily = FontFamily.Serif
                     ),
-                    maxLines = 4
+                    maxLines = quoteMaxLines
                 )
 
-                Spacer(modifier = GlanceModifier.height(8.dp))
+                Spacer(modifier = GlanceModifier.height(4.dp))
 
                 Text(
                     text = "— ${dailyLyric.songTitle} • ${dailyLyric.artistName}",
                     style = TextStyle(
                         color = GlanceTheme.colors.onSurfaceVariant,
-                        fontSize = 11.sp,
+                        fontSize = 10.sp,
                         fontWeight = FontWeight.Medium
                     ),
                     maxLines = 1

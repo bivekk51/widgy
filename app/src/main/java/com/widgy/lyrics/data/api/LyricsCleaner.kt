@@ -8,7 +8,8 @@ data class LyricLine(
 
 object LyricsCleaner {
     private val timestampRegex = Regex("""\[\d{2}:\d{2}\.\d{2,3}\]""")
-    private val sectionHeaderRegex = Regex("""^\[(chorus|hook|refrain|verse|bridge|outro|intro|pre-chorus)[^\]]*\]$""", RegexOption.IGNORE_CASE)
+    private val lrcMetadataTagRegex = Regex("""^\[(ar|ti|al|by|length|offset|re|ve|id):[^\]]*\]$""", RegexOption.IGNORE_CASE)
+    private val sectionHeaderRegex = Regex("""^\[(chorus|hook|refrain|verse|bridge|outro|intro|pre-chorus|post-chorus|instrumental)[^\]]*\]$""", RegexOption.IGNORE_CASE)
     private val hookMarkerRegex = Regex("""^\[(chorus|hook|refrain)[^\]]*\]$""", RegexOption.IGNORE_CASE)
 
     fun cleanLyrics(raw: String): List<LyricLine> {
@@ -19,6 +20,11 @@ object LyricsCleaner {
         for (line in rawLines) {
             val stripped = line.replace(timestampRegex, "").trim()
             if (stripped.isBlank()) {
+                continue
+            }
+
+            // Skip standard LRC metadata tags like [ar:Kendrick Lamar], [ti:HUMBLE.]
+            if (lrcMetadataTagRegex.matches(stripped)) {
                 continue
             }
 
