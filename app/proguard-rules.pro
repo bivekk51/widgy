@@ -1,0 +1,1 @@
+# Widgy Proguard Rules
