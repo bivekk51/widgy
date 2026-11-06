@@ -68,13 +68,13 @@ fun WidgyNavGraph(
             val uiState by dashboardViewModel.uiState.collectAsState()
 
             ThemeStudioScreen(
-                initialConfig = uiState.widgetConfig,
+                initialConfig = uiState.themeConfig,
                 dailyLyric = uiState.todayLyric,
                 onConfigChanged = { updatedConfig ->
-                    dashboardViewModel.updateWidgetConfig(updatedConfig, context)
+                    dashboardViewModel.updateThemeConfig(updatedConfig, context)
                 },
                 onApplyConfig = { newConfig ->
-                    dashboardViewModel.updateWidgetConfig(newConfig, context)
+                    dashboardViewModel.updateThemeConfig(newConfig, context)
                     navController.popBackStack()
                 },
                 onBack = { navController.popBackStack() }

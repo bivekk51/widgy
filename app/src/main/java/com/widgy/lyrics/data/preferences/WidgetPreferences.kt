@@ -3,6 +3,11 @@ package com.widgy.lyrics.data.preferences
 import android.content.Context
 import android.content.SharedPreferences
 import com.widgy.lyrics.domain.model.DailyLyric
+import com.widgy.lyrics.domain.theme.ThemeConfig
+import com.widgy.lyrics.domain.theme.ThemeCreditMode
+import com.widgy.lyrics.domain.theme.ThemeSizeMode
+import com.widgy.lyrics.domain.theme.ThemeSpecs
+import com.widgy.lyrics.domain.theme.ThemeTypeface
 
 enum class WidgetTemplate(
     val displayName: String,
@@ -69,6 +74,96 @@ class WidgetPreferences(context: Context) {
             .putString("cached_lyric_title", lyric.songTitle)
             .putString("cached_lyric_artist", lyric.artistName)
             .putLong("cached_lyric_song_id", lyric.songId)
+            .commit()
+    }
+
+    fun getThemeConfig(): ThemeConfig {
+        val themeId = prefs.getString("theme_id", null)
+        if (themeId != null) {
+            val typefaceStr = prefs.getString("theme_typeface", ThemeTypeface.SANS.name) ?: ThemeTypeface.SANS.name
+            val sizeModeStr = prefs.getString("theme_size_mode", ThemeSizeMode.AUTO.name) ?: ThemeSizeMode.AUTO.name
+            val creditModeStr = prefs.getString("theme_credit_mode", ThemeCreditMode.NONE.name) ?: ThemeCreditMode.NONE.name
+            return ThemeConfig(
+                themeId = themeId,
+                typeface = runCatching { ThemeTypeface.valueOf(typefaceStr) }.getOrDefault(ThemeTypeface.SANS),
+                sizeMode = runCatching { ThemeSizeMode.valueOf(sizeModeStr) }.getOrDefault(ThemeSizeMode.AUTO),
+                creditMode = runCatching { ThemeCreditMode.valueOf(creditModeStr) }.getOrDefault(ThemeCreditMode.NONE)
+            )
+        }
+
+        // Migrate from legacy WidgetConfig if present
+        val legacyTemplate = prefs.getString("template", null)
+        if (legacyTemplate != null) {
+            val mappedThemeId = when (legacyTemplate.uppercase()) {
+                "GENIUS" -> "genius"
+                "SPOTIFY" -> "spotify"
+                "CLASSIC" -> "classic"
+                "TERMINAL" -> "terminal"
+                "MINIMAL" -> "genius"
+                else -> "amber"
+            }
+            val legacyFont = prefs.getString("font_family", "SYSTEM") ?: "SYSTEM"
+            val mappedTypeface = when (legacyFont.uppercase()) {
+                "SERIF" -> ThemeTypeface.SERIF
+                "MONOSPACE" -> ThemeTypeface.MONO
+                else -> ThemeTypeface.SANS
+            }
+            val legacySize = prefs.getString("font_size", "LARGE") ?: "LARGE"
+            val mappedSize = when (legacySize.uppercase()) {
+                "SMALL" -> ThemeSizeMode.SP_16
+                "MEDIUM", "REGULAR" -> ThemeSizeMode.SP_22
+                "LARGE" -> ThemeSizeMode.SP_30
+                "EXTRA_LARGE", "JUMBO" -> ThemeSizeMode.SP_40
+                else -> ThemeSizeMode.AUTO
+            }
+            val legacyAttr = prefs.getString("attribution", "NONE") ?: "NONE"
+            val mappedCredit = when (legacyAttr.uppercase()) {
+                "ARTIST_ONLY" -> ThemeCreditMode.ARTIST
+                "SONG_AND_ARTIST" -> ThemeCreditMode.SONG_AND_ARTIST
+                else -> ThemeCreditMode.NONE
+            }
+            return ThemeConfig(
+                themeId = mappedThemeId,
+                typeface = mappedTypeface,
+                sizeMode = mappedSize,
+                creditMode = mappedCredit
+            )
+        }
+
+        // Default as specified in prompt: Amber, Sans, Auto, None
+        return ThemeConfig(
+            themeId = ThemeSpecs.AMBER.id,
+            typeface = ThemeTypeface.SANS,
+            sizeMode = ThemeSizeMode.AUTO,
+            creditMode = ThemeCreditMode.NONE
+        )
+    }
+
+    fun saveThemeConfig(config: ThemeConfig) {
+        prefs.edit()
+            .putString("theme_id", config.themeId)
+            .putString("theme_typeface", config.typeface.name)
+            .putString("theme_size_mode", config.sizeMode.name)
+            .putString("theme_credit_mode", config.creditMode.name)
+            // Also keep legacy keys in sync for backward compatibility
+            .putString("template", config.themeId.uppercase())
+            .putString("font_family", when (config.typeface) {
+                ThemeTypeface.SANS -> WidgetFontFamily.SYSTEM.name
+                ThemeTypeface.SERIF -> WidgetFontFamily.SERIF.name
+                ThemeTypeface.MONO -> WidgetFontFamily.MONOSPACE.name
+            })
+            .putString("font_size", when (config.sizeMode) {
+                ThemeSizeMode.SP_16 -> WidgetFontSize.SMALL.name
+                ThemeSizeMode.SP_22 -> WidgetFontSize.MEDIUM.name
+                ThemeSizeMode.SP_30 -> WidgetFontSize.LARGE.name
+                ThemeSizeMode.SP_40 -> WidgetFontSize.EXTRA_LARGE.name
+                ThemeSizeMode.AUTO -> WidgetFontSize.LARGE.name
+            })
+            .putString("attribution", when (config.creditMode) {
+                ThemeCreditMode.NONE -> WidgetAttribution.NONE.name
+                ThemeCreditMode.ARTIST -> WidgetAttribution.ARTIST_ONLY.name
+                ThemeCreditMode.SONG_AND_ARTIST -> WidgetAttribution.SONG_AND_ARTIST.name
+            })
             .commit()
     }
 

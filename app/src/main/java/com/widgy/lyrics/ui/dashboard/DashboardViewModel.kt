@@ -8,6 +8,7 @@ import com.widgy.lyrics.data.preferences.WidgetConfig
 import com.widgy.lyrics.data.preferences.WidgetPreferences
 import com.widgy.lyrics.data.repository.LyricsRepository
 import com.widgy.lyrics.domain.model.DailyLyric
+import com.widgy.lyrics.domain.theme.ThemeConfig
 import com.widgy.lyrics.widget.WidgetUpdateManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,6 +22,7 @@ data class DashboardUiState(
     val todayLyric: DailyLyric? = null,
     val savedSongs: List<SongWithSnippets> = emptyList(),
     val widgetConfig: WidgetConfig = WidgetConfig(),
+    val themeConfig: ThemeConfig = ThemeConfig(),
     val isRefreshingLyric: Boolean = false,
     val isLoading: Boolean = false
 )
@@ -32,7 +34,8 @@ class DashboardViewModel(
 
     private val _uiState = MutableStateFlow(
         DashboardUiState(
-            widgetConfig = context?.let { WidgetPreferences(it).getConfig() } ?: WidgetConfig()
+            widgetConfig = context?.let { WidgetPreferences(it).getConfig() } ?: WidgetConfig(),
+            themeConfig = context?.let { WidgetPreferences(it).getThemeConfig() } ?: ThemeConfig()
         )
     )
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
@@ -55,7 +58,17 @@ class DashboardViewModel(
 
     fun reloadConfig(context: Context) {
         val config = WidgetPreferences(context).getConfig()
-        _uiState.update { it.copy(widgetConfig = config) }
+        val themeConfig = WidgetPreferences(context).getThemeConfig()
+        _uiState.update { it.copy(widgetConfig = config, themeConfig = themeConfig) }
+    }
+
+    fun updateThemeConfig(newConfig: ThemeConfig, context: Context) {
+        WidgetPreferences(context).saveThemeConfig(newConfig)
+        val legacy = WidgetPreferences(context).getConfig()
+        _uiState.update { it.copy(themeConfig = newConfig, widgetConfig = legacy) }
+        viewModelScope.launch {
+            WidgetUpdateManager.updateAllWidgets(context)
+        }
     }
 
     fun refreshTodayLyric(context: Context? = null) {
