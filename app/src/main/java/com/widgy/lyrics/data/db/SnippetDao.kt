@@ -25,4 +25,7 @@ interface SnippetDao {
 
     @Query("DELETE FROM snippets WHERE id = :id")
     suspend fun deleteSnippetById(id: Long)
+
+    @Query("DELETE FROM snippets WHERE songId = :songId")
+    suspend fun deleteAllSnippetsForSong(songId: Long)
 }

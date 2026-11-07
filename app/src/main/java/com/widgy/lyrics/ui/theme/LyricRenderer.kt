@@ -373,11 +373,26 @@ object LyricRenderer {
                     alpha = (255 * 0.65f).roundToInt()
                     textSize = 12f * density
                     typeface = resolveTypeface(context, spec, config.typeface)
-                    textAlign = Paint.Align.CENTER
                 }
-                val footerY = h - (14f * density)
-                val footerX = w / 2f
-                canvas.drawText(creditText, footerX, footerY, footerPaint)
+                // Use StaticLayout to allow the footer to wrap and never clip
+                val footerWidth = max(w - padHorizontal * 2, 40)
+                val footerLayout = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    StaticLayout.Builder.obtain(creditText, 0, creditText.length, footerPaint, footerWidth)
+                        .setAlignment(Layout.Alignment.ALIGN_CENTER)
+                        .setLineSpacing(0f, 1.2f)
+                        .setIncludePad(false)
+                        .build()
+                } else {
+                    @Suppress("DEPRECATION")
+                    StaticLayout(creditText, footerPaint, footerWidth, Layout.Alignment.ALIGN_CENTER, 1.2f, 0f, false)
+                }
+                // Position so bottom of footer text sits 14dp from bottom of canvas
+                val footerBottom = h - (14f * density)
+                val footerTop = footerBottom - footerLayout.height
+                canvas.save()
+                canvas.translate(padHorizontal.toFloat(), footerTop)
+                footerLayout.draw(canvas)
+                canvas.restore()
             }
         }
 

@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -51,7 +52,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.Image
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
@@ -61,11 +65,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.widgy.lyrics.data.db.SnippetEntity
 import com.widgy.lyrics.data.db.SongWithSnippets
-import com.widgy.lyrics.data.preferences.WidgetAttribution
-import com.widgy.lyrics.data.preferences.WidgetConfig
-import com.widgy.lyrics.data.preferences.WidgetFontFamily
-import com.widgy.lyrics.data.preferences.WidgetFontSize
-import com.widgy.lyrics.data.preferences.WidgetTemplate
 import com.widgy.lyrics.domain.model.DailyLyric
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -116,7 +115,7 @@ fun DashboardScreen(
             item {
                 TodayLyricLiveCard(
                     dailyLyric = state.todayLyric,
-                    config = state.widgetConfig,
+                    themeConfig = state.themeConfig,
                     isRefreshing = state.isRefreshingLyric,
                     onRefreshClick = { viewModel.refreshTodayLyric(context) },
                     onClick = {
@@ -207,77 +206,71 @@ fun DashboardScreen(
 @Composable
 private fun TodayLyricLiveCard(
     dailyLyric: DailyLyric?,
-    config: WidgetConfig,
+    themeConfig: com.widgy.lyrics.domain.theme.ThemeConfig,
     isRefreshing: Boolean,
     onRefreshClick: () -> Unit,
     onClick: () -> Unit
 ) {
-    val cardBg = when (config.template) {
-        WidgetTemplate.GENIUS -> Color(0xFF0A0A0A)
-        WidgetTemplate.SPOTIFY -> Color(0xFF121212)
-        WidgetTemplate.CLASSIC -> Color(0xFF18181A)
-        WidgetTemplate.TERMINAL -> Color(0xFF0D1117)
-        WidgetTemplate.MINIMAL -> Color(0xFF000000)
-    }
-
-    val finalFontFamily = when (config.fontFamily) {
-        WidgetFontFamily.SERIF -> FontFamily.Serif
-        WidgetFontFamily.MONOSPACE -> FontFamily.Monospace
-        WidgetFontFamily.SYSTEM -> when (config.template) {
-            WidgetTemplate.CLASSIC -> FontFamily.Serif
-            WidgetTemplate.TERMINAL -> FontFamily.Monospace
-            else -> FontFamily.SansSerif
-        }
-    }
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(22.dp))
             .clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = cardBg),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(themeConfig.themeSpec.backgroundColor)
+        ),
         shape = RoundedCornerShape(22.dp)
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(18.dp)
+                .height(200.dp)
         ) {
-            // Top Right Refresh Button
-            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.TopEnd) {
-                if (isRefreshing) {
-                    CircularProgressIndicator(
-                        modifier = Modifier
-                            .height(18.dp)
-                            .width(18.dp),
-                        color = Color.White
-                    )
-                } else {
-                    IconButton(onClick = onRefreshClick) {
-                        Icon(
-                            Icons.Default.Refresh,
-                            contentDescription = "Shuffle Lyric",
-                            tint = when (config.template) {
-                                WidgetTemplate.SPOTIFY -> Color(0xAA1ED760)
-                                WidgetTemplate.TERMINAL -> Color(0xAAFFB454)
-                                else -> Color(0x99FFFFFF)
-                            }
+            if (dailyLyric != null) {
+                // Live bitmap preview using the shared LyricRenderer — same output as widget
+                BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                    val density = androidx.compose.ui.platform.LocalDensity.current.density
+                    val widthPx = (maxWidth.value * density).toInt()
+                    val heightPx = (maxHeight.value * density).toInt()
+
+                    val lines = dailyLyric.text.trim()
+                        .lines().map { it.trim() }.filter { it.isNotBlank() }
+
+                    val bitmap = remember(themeConfig, lines, dailyLyric.songTitle, dailyLyric.artistName, widthPx, heightPx) {
+                        if (widthPx > 50 && heightPx > 50) {
+                            com.widgy.lyrics.ui.theme.LyricRenderer.render(
+                                context = context,
+                                config = themeConfig,
+                                lines = lines,
+                                songTitle = dailyLyric.songTitle,
+                                artistName = dailyLyric.artistName,
+                                widthPx = widthPx,
+                                heightPx = heightPx
+                            )
+                        } else null
+                    }
+
+                    if (bitmap != null) {
+                        androidx.compose.foundation.Image(
+                            bitmap = bitmap.asImageBitmap(),
+                            contentDescription = "Today's lyric preview",
+                            modifier = Modifier.fillMaxSize()
                         )
                     }
                 }
-            }
-
-            // Center Content
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 12.dp, horizontal = 8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                if (dailyLyric == null) {
+            } else {
+                // Empty state
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(18.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
                     Text(
-                        text = "“No lyrics in rotation yet”",
+                        text = "\u201cNo lyrics in rotation yet\u201d",
                         color = Color(0xFF8E8E93),
                         fontSize = 17.sp,
                         textAlign = TextAlign.Center
@@ -289,76 +282,28 @@ private fun TodayLyricLiveCard(
                         fontSize = 12.sp,
                         textAlign = TextAlign.Center
                     )
-                } else {
-                    val clean = dailyLyric.text.trim().trim('"', '“', '”', '‘', '’')
-                    val formatted = when (config.template) {
-                        WidgetTemplate.GENIUS -> "“${clean.uppercase()}”"
-                        WidgetTemplate.SPOTIFY -> "“$clean”"
-                        WidgetTemplate.CLASSIC -> "“$clean”"
-                        WidgetTemplate.TERMINAL -> "> $clean"
-                        WidgetTemplate.MINIMAL -> clean
-                    }
+                }
+            }
 
-                    val textColor = when (config.template) {
-                        WidgetTemplate.SPOTIFY -> Color.White
-                        WidgetTemplate.TERMINAL -> Color(0xFFFFB454)
-                        WidgetTemplate.CLASSIC -> Color(0xFFF2F2F7)
-                        WidgetTemplate.MINIMAL -> Color(0xFFEBEBF0)
-                        else -> Color.White
-                    }
-
-                    val fontStyle = when (config.template) {
-                        WidgetTemplate.CLASSIC -> FontStyle.Italic
-                        else -> FontStyle.Normal
-                    }
-
-                    val fontWeight = when (config.template) {
-                        WidgetTemplate.GENIUS, WidgetTemplate.SPOTIFY -> FontWeight.Bold
-                        WidgetTemplate.MINIMAL -> FontWeight.Normal
-                        else -> FontWeight.Medium
-                    }
-
-                    Text(
-                        text = formatted,
-                        color = textColor,
-                        fontSize = config.fontSize.sizeSp.sp,
-                        lineHeight = config.fontSize.lineHeightSp.sp,
-                        fontWeight = fontWeight,
-                        fontStyle = fontStyle,
-                        fontFamily = finalFontFamily,
-                        textAlign = TextAlign.Center
+            // Refresh button top-right
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                contentAlignment = Alignment.TopEnd
+            ) {
+                if (isRefreshing) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        color = Color.White,
+                        strokeWidth = 2.dp
                     )
-
-                    val attribution = when (config.attribution) {
-                        WidgetAttribution.NONE -> null
-                        WidgetAttribution.ARTIST_ONLY -> when (config.template) {
-                            WidgetTemplate.SPOTIFY -> "♫ ${dailyLyric.artistName}"
-                            WidgetTemplate.TERMINAL -> "$ ${dailyLyric.artistName}"
-                            else -> "— ${dailyLyric.artistName}"
-                        }
-                        WidgetAttribution.SONG_AND_ARTIST -> when (config.template) {
-                            WidgetTemplate.SPOTIFY -> "♫ ${dailyLyric.songTitle} • ${dailyLyric.artistName}"
-                            WidgetTemplate.TERMINAL -> "$ ${dailyLyric.songTitle} :: ${dailyLyric.artistName}"
-                            else -> "— ${dailyLyric.songTitle} • ${dailyLyric.artistName}"
-                        }
-                    }
-
-                    val attributionColor = when (config.template) {
-                        WidgetTemplate.SPOTIFY -> Color(0xFF1ED760)
-                        WidgetTemplate.TERMINAL -> Color(0xFFE5A93C)
-                        WidgetTemplate.MINIMAL -> Color(0xFF636366)
-                        else -> Color(0xFF8E8E93)
-                    }
-
-                    if (attribution != null) {
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Text(
-                            text = attribution,
-                            color = attributionColor,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium,
-                            fontFamily = if (config.template == WidgetTemplate.TERMINAL) FontFamily.Monospace else FontFamily.SansSerif,
-                            textAlign = TextAlign.Center
+                } else {
+                    IconButton(onClick = onRefreshClick) {
+                        Icon(
+                            Icons.Default.Refresh,
+                            contentDescription = "Shuffle Lyric",
+                            tint = Color(0x99FFFFFF)
                         )
                     }
                 }
