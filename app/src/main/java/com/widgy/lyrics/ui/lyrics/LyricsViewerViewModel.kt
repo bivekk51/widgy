@@ -27,7 +27,11 @@ data class LyricsViewerUiState(
     val isRandomPool: Boolean = false,
     val isLoading: Boolean = false,
     val isSaved: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val isManualMode: Boolean = false,
+    val customSnippetOverride: String? = null,
+    val isEditingSnippetDialog: Boolean = false,
+    val snippetEditDraft: String = ""
 )
 
 class LyricsViewerViewModel(
@@ -57,6 +61,67 @@ class LyricsViewerViewModel(
         if (raw.isBlank() && track.trackName != null && track.artistName != null) {
             fetchLyrics(track.trackName, track.artistName)
         }
+    }
+
+    fun initManualEntry() {
+        _uiState.update {
+            LyricsViewerUiState(
+                isManualMode = true,
+                title = "",
+                artist = "",
+                rawLyrics = ""
+            )
+        }
+    }
+
+    fun updateManualFields(title: String, artist: String, rawLyrics: String) {
+        val cleaned = LyricsCleaner.cleanLyrics(rawLyrics)
+        _uiState.update {
+            it.copy(
+                title = title,
+                artist = artist,
+                rawLyrics = rawLyrics,
+                lines = cleaned,
+                selectedLineIndices = emptySet(),
+                customSnippetOverride = null,
+                selectionWarning = null
+            )
+        }
+    }
+
+    fun openSnippetEditor() {
+        val state = _uiState.value
+        val currentSnippet = state.customSnippetOverride ?: state.selectedLineIndices
+            .sorted()
+            .mapNotNull { idx -> state.lines.getOrNull(idx)?.text }
+            .joinToString("\n")
+        _uiState.update {
+            it.copy(
+                isEditingSnippetDialog = true,
+                snippetEditDraft = currentSnippet
+            )
+        }
+    }
+
+    fun updateSnippetEditDraft(text: String) {
+        _uiState.update { it.copy(snippetEditDraft = text) }
+    }
+
+    fun confirmSnippetEdit() {
+        _uiState.update {
+            it.copy(
+                isEditingSnippetDialog = false,
+                customSnippetOverride = it.snippetEditDraft.trim()
+            )
+        }
+    }
+
+    fun cancelSnippetEdit() {
+        _uiState.update { it.copy(isEditingSnippetDialog = false) }
+    }
+
+    fun clearCustomSnippetOverride() {
+        _uiState.update { it.copy(customSnippetOverride = null) }
     }
 
     fun loadLocalSong(songId: Long, highlightSnippetText: String? = null) {
@@ -121,43 +186,46 @@ class LyricsViewerViewModel(
 
     fun toggleLineSelection(index: Int) {
         _uiState.update { state ->
-            if (state.selectedLineIndices.contains(index)) {
-                state.copy(
-                    selectedLineIndices = state.selectedLineIndices - index,
-                    selectionWarning = null
-                )
+            val newSelection = if (state.selectedLineIndices.contains(index)) {
+                state.selectedLineIndices - index
             } else {
                 if (state.selectedLineIndices.size >= 2) {
-                    state.copy(selectionWarning = "Maximum 2 lines can be selected")
+                    state.selectedLineIndices
                 } else {
-                    state.copy(
-                        selectedLineIndices = state.selectedLineIndices + index,
-                        selectionWarning = null
-                    )
+                    state.selectedLineIndices + index
                 }
             }
+            val warning = if (!state.selectedLineIndices.contains(index) && state.selectedLineIndices.size >= 2) {
+                "Maximum 2 lines can be selected"
+            } else null
+
+            state.copy(
+                selectedLineIndices = newSelection,
+                selectionWarning = warning,
+                customSnippetOverride = null
+            )
         }
     }
 
     fun saveSelectedSnippets(context: Context? = null, onSuccess: () -> Unit) {
         val state = _uiState.value
-        val selectedTexts = state.selectedLineIndices
-            .sorted()
-            .mapNotNull { idx -> state.lines.getOrNull(idx)?.text }
+        val snippetToSave = state.customSnippetOverride?.takeIf { it.isNotBlank() }
+            ?: state.selectedLineIndices
+                .sorted()
+                .mapNotNull { idx -> state.lines.getOrNull(idx)?.text }
+                .joinToString("\n")
+                .takeIf { it.isNotBlank() }
 
-        if (selectedTexts.isEmpty()) return
-
-        // Join selected lines (1 or 2 lines) into a single snippet
-        val combinedSnippet = selectedTexts.joinToString("\n")
+        if (snippetToSave == null) return
 
         viewModelScope.launch {
             repository.saveSongWithSnippets(
-                title = state.title,
-                artist = state.artist,
+                title = state.title.ifBlank { "Untitled" },
+                artist = state.artist.ifBlank { "Unknown Artist" },
                 album = state.album,
                 plainLyrics = state.rawLyrics,
                 lrclibId = state.lrclibId,
-                snippets = listOf(combinedSnippet),
+                snippets = listOf(snippetToSave),
                 isRandomPool = false,
                 existingSongId = state.localSongId
             )

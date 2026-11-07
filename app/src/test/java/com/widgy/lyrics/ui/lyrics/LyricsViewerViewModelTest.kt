@@ -75,4 +75,56 @@ class LyricsViewerViewModelTest {
             )
         }
     }
+
+    @Test
+    fun initManualEntry_setsManualMode() = runTest(testDispatcher) {
+        viewModel.initManualEntry()
+        val state = viewModel.uiState.value
+        assertEquals(true, state.isManualMode)
+        assertEquals("", state.title)
+        assertEquals("", state.artist)
+    }
+
+    @Test
+    fun updateManualFields_cleansLinesAndSetsMetadata() = runTest(testDispatcher) {
+        viewModel.initManualEntry()
+        viewModel.updateManualFields("Custom Track", "Indie Artist", "Line one\nLine two")
+        val state = viewModel.uiState.value
+        assertEquals("Custom Track", state.title)
+        assertEquals("Indie Artist", state.artist)
+        assertEquals(2, state.lines.size)
+        assertEquals("Line one", state.lines[0].text)
+    }
+
+    @Test
+    fun snippetEditing_customSnippetOverridesSelection() = runTest(testDispatcher) {
+        viewModel.initManualEntry()
+        viewModel.updateManualFields("Song", "Artist", "Line one\nLine two")
+        viewModel.toggleLineSelection(0)
+
+        viewModel.openSnippetEditor()
+        assertEquals(true, viewModel.uiState.value.isEditingSnippetDialog)
+        assertEquals("Line one", viewModel.uiState.value.snippetEditDraft)
+
+        viewModel.updateSnippetEditDraft("Line one edited (no ad-lib)")
+        viewModel.confirmSnippetEdit()
+
+        assertEquals("Line one edited (no ad-lib)", viewModel.uiState.value.customSnippetOverride)
+
+        viewModel.saveSelectedSnippets {}
+        testScheduler.advanceUntilIdle()
+
+        coVerify {
+            repository.saveSongWithSnippets(
+                title = "Song",
+                artist = "Artist",
+                album = any(),
+                plainLyrics = any(),
+                lrclibId = any(),
+                snippets = listOf("Line one edited (no ad-lib)"),
+                isRandomPool = false,
+                existingSongId = any()
+            )
+        }
+    }
 }

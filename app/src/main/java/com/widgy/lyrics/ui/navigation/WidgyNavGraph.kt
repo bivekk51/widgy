@@ -26,6 +26,7 @@ object NavRoutes {
     const val SEARCH = "search"
     const val THEME_STUDIO = "theme_studio"
     const val LYRICS_LOCAL = "lyrics_local/{songId}"
+    const val MANUAL_ENTRY = "manual_entry"
 
     fun lyricsLocal(songId: Long) = "lyrics_local/$songId"
 }
@@ -87,6 +88,23 @@ fun WidgyNavGraph(
                     selectedOnlineTrack.clear()
                     selectedOnlineTrack.add(track)
                     navController.navigate("lyrics_online")
+                },
+                onManualEntryClick = {
+                    navController.navigate(NavRoutes.MANUAL_ENTRY)
+                },
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(NavRoutes.MANUAL_ENTRY) {
+            val lyricsViewModel = remember { LyricsViewerViewModel(repository) }
+            LaunchedEffect(Unit) {
+                lyricsViewModel.initManualEntry()
+            }
+            LyricsViewerScreen(
+                viewModel = lyricsViewModel,
+                onSaved = {
+                    navController.popBackStack(NavRoutes.DASHBOARD, inclusive = false)
                 },
                 onBack = { navController.popBackStack() }
             )
