@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -76,14 +77,15 @@ fun DashboardScreen(
     viewModel: DashboardViewModel,
     onAddSongClick: () -> Unit,
     onSongClick: (Long) -> Unit,
-    onChangeThemeClick: () -> Unit
+    onChangeThemeClick: () -> Unit,
+    onScrapbookClick: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.reloadConfig(context)
-        viewModel.loadTodayLyric()
+        viewModel.loadTodayLyric(context)
     }
 
     Scaffold(
@@ -95,6 +97,11 @@ fun DashboardScreen(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp
                     )
+                },
+                actions = {
+                    IconButton(onClick = onScrapbookClick) {
+                        Icon(Icons.Default.DateRange, contentDescription = "Lyric Scrapbook")
+                    }
                 }
             )
         },

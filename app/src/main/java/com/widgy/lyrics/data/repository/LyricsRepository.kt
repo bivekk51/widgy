@@ -122,6 +122,10 @@ class LyricsRepository(
         return db.dailyHistoryDao().observeDailyLyric(date.toString())
     }
 
+    fun observeDailyHistory(): Flow<List<DailyHistoryEntity>> {
+        return db.dailyHistoryDao().getAllHistory()
+    }
+
     suspend fun refreshTodayLyric(): DailyLyric? {
         return rotationEngine.resolveDailyLyric(LocalDate.now(), forceRefresh = true)
     }

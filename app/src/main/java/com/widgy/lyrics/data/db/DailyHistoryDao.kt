@@ -14,6 +14,9 @@ interface DailyHistoryDao {
     @Query("SELECT * FROM daily_history WHERE date = :date LIMIT 1")
     fun observeDailyLyric(date: String): Flow<DailyHistoryEntity?>
 
+    @Query("SELECT * FROM daily_history ORDER BY date DESC")
+    fun getAllHistory(): Flow<List<DailyHistoryEntity>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertOrUpdate(entity: DailyHistoryEntity)
 

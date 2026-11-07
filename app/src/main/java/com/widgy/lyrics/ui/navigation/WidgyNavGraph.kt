@@ -15,6 +15,8 @@ import com.widgy.lyrics.data.model.LrcTrackDto
 import com.widgy.lyrics.data.repository.LyricsRepository
 import com.widgy.lyrics.ui.dashboard.DashboardScreen
 import com.widgy.lyrics.ui.dashboard.DashboardViewModel
+import com.widgy.lyrics.ui.history.ScrapbookScreen
+import com.widgy.lyrics.ui.history.ScrapbookViewModel
 import com.widgy.lyrics.ui.lyrics.LyricsViewerScreen
 import com.widgy.lyrics.ui.lyrics.LyricsViewerViewModel
 import com.widgy.lyrics.ui.search.SearchScreen
@@ -27,6 +29,7 @@ object NavRoutes {
     const val THEME_STUDIO = "theme_studio"
     const val LYRICS_LOCAL = "lyrics_local/{songId}"
     const val MANUAL_ENTRY = "manual_entry"
+    const val SCRAPBOOK = "scrapbook"
 
     fun lyricsLocal(songId: Long) = "lyrics_local/$songId"
 }
@@ -61,7 +64,16 @@ fun WidgyNavGraph(
                 viewModel = dashboardViewModel,
                 onAddSongClick = { navController.navigate(NavRoutes.SEARCH) },
                 onSongClick = { songId -> navController.navigate(NavRoutes.lyricsLocal(songId)) },
-                onChangeThemeClick = { navController.navigate(NavRoutes.THEME_STUDIO) }
+                onChangeThemeClick = { navController.navigate(NavRoutes.THEME_STUDIO) },
+                onScrapbookClick = { navController.navigate(NavRoutes.SCRAPBOOK) }
+            )
+        }
+
+        composable(NavRoutes.SCRAPBOOK) {
+            val scrapbookViewModel = remember { ScrapbookViewModel(repository) }
+            ScrapbookScreen(
+                viewModel = scrapbookViewModel,
+                onBack = { navController.popBackStack() }
             )
         }
 
