@@ -98,8 +98,16 @@ private fun WidgetContent(
 
     val songTitle = dailyLyric?.songTitle ?: ""
     val artistName = dailyLyric?.artistName ?: ""
+    val songId = dailyLyric?.songId ?: 0L
 
-    val bitmap = androidx.compose.runtime.remember(themeConfig, lines, songTitle, artistName, widthPx, heightPx) {
+    val albumArtBitmap = if (themeConfig.useAlbumArtBackdrop && songId > 0) {
+        com.widgy.lyrics.data.image.ArtworkManager(context)
+            .loadCachedArtworkBitmap(songId, maxDimension = 180)?.let {
+                com.widgy.lyrics.data.image.StackBlur.blur(it, 20)
+            }
+    } else null
+
+    val bitmap = androidx.compose.runtime.remember(themeConfig, lines, songTitle, artistName, widthPx, heightPx, albumArtBitmap) {
         LyricRenderer.render(
             context = context,
             config = themeConfig,
@@ -110,7 +118,8 @@ private fun WidgetContent(
             heightPx = heightPx,
             padTopDp = 18f,
             padBottomDp = if (themeConfig.creditMode != com.widgy.lyrics.domain.theme.ThemeCreditMode.NONE) 36f else 18f,
-            padHorizontalDp = 18f
+            padHorizontalDp = 18f,
+            albumArtBitmap = albumArtBitmap
         )
     }
 
@@ -128,28 +137,30 @@ private fun WidgetContent(
             modifier = GlanceModifier.fillMaxSize()
         )
 
-        // Top-Right Refresh Button (40dp circle, 8dp padding from edge, never overlaps lyrics text)
-        Box(
-            modifier = GlanceModifier.fillMaxSize(),
-            contentAlignment = Alignment.TopEnd
-        ) {
+        // Top-Right Refresh Button (only if showRefreshButton is enabled)
+        if (themeConfig.showRefreshButton) {
             Box(
-                modifier = GlanceModifier
-                    .padding(8.dp)
-                    .size(40.dp)
-                    .cornerRadius(20.dp)
-                    .background(ColorProvider(Color(0x33000000)))
-                    .clickable(actionRunCallback<RefreshLyricActionCallback>()),
-                contentAlignment = Alignment.Center
+                modifier = GlanceModifier.fillMaxSize(),
+                contentAlignment = Alignment.TopEnd
             ) {
-                Text(
-                    text = "↻",
-                    style = TextStyle(
-                        color = ColorProvider(Color(0xE6FFFFFF)),
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.Bold
+                Box(
+                    modifier = GlanceModifier
+                        .padding(8.dp)
+                        .size(40.dp)
+                        .cornerRadius(20.dp)
+                        .background(ColorProvider(Color(0x33000000)))
+                        .clickable(actionRunCallback<RefreshLyricActionCallback>()),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "↻",
+                        style = TextStyle(
+                            color = ColorProvider(Color(0xE6FFFFFF)),
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                     )
-                )
+                }
             }
         }
     }

@@ -159,4 +159,32 @@ class LyricRendererTest {
         assertEquals(400, bitmap.width)
         assertEquals(300, bitmap.height)
     }
+
+    @Test
+    fun render_withAlbumArtBackdrop_drawsWithoutCrashing() {
+        val lines = listOf("We gon' be alright")
+        val config = ThemeConfig(
+            themeId = ThemeSpecs.GENIUS.id,
+            typeface = ThemeTypeface.SANS,
+            sizeMode = ThemeSizeMode.AUTO,
+            creditMode = ThemeCreditMode.SONG_AND_ARTIST,
+            useAlbumArtBackdrop = true
+        )
+        val dummyArt = android.graphics.Bitmap.createBitmap(50, 50, android.graphics.Bitmap.Config.ARGB_8888)
+
+        val bitmap = LyricRenderer.render(
+            context = context,
+            config = config,
+            lines = lines,
+            songTitle = "Alright",
+            artistName = "Kendrick Lamar",
+            widthPx = 500,
+            heightPx = 350,
+            albumArtBitmap = dummyArt
+        )
+
+        assertNotNull(bitmap)
+        assertEquals(500, bitmap.width)
+        assertEquals(350, bitmap.height)
+    }
 }

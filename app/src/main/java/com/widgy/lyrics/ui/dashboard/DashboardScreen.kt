@@ -212,6 +212,24 @@ private fun TodayLyricLiveCard(
     onClick: () -> Unit
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
+    val artworkManager = remember { com.widgy.lyrics.data.image.ArtworkManager(context) }
+    var albumArtBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+
+    LaunchedEffect(dailyLyric?.songId, themeConfig.useAlbumArtBackdrop) {
+        if (themeConfig.useAlbumArtBackdrop && dailyLyric != null && dailyLyric.songId > 0) {
+            val art = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                artworkManager.getOrFetchArtworkBitmap(
+                    dailyLyric.songId,
+                    dailyLyric.songTitle,
+                    dailyLyric.artistName,
+                    maxDimension = 200
+                )
+            }
+            albumArtBitmap = if (art != null) com.widgy.lyrics.data.image.StackBlur.blur(art, 22) else null
+        } else {
+            albumArtBitmap = null
+        }
+    }
 
     Card(
         modifier = Modifier
@@ -238,7 +256,7 @@ private fun TodayLyricLiveCard(
                     val lines = dailyLyric.text.trim()
                         .lines().map { it.trim() }.filter { it.isNotBlank() }
 
-                    val bitmap = remember(themeConfig, lines, dailyLyric.songTitle, dailyLyric.artistName, widthPx, heightPx) {
+                    val bitmap = remember(themeConfig, lines, dailyLyric.songTitle, dailyLyric.artistName, widthPx, heightPx, albumArtBitmap) {
                         if (widthPx > 50 && heightPx > 50) {
                             com.widgy.lyrics.ui.theme.LyricRenderer.render(
                                 context = context,
@@ -250,7 +268,8 @@ private fun TodayLyricLiveCard(
                                 heightPx = heightPx,
                                 padTopDp = 18f,
                                 padBottomDp = if (themeConfig.creditMode != com.widgy.lyrics.domain.theme.ThemeCreditMode.NONE) 36f else 18f,
-                                padHorizontalDp = 16f
+                                padHorizontalDp = 16f,
+                                albumArtBitmap = albumArtBitmap
                             )
                         } else null
                     }

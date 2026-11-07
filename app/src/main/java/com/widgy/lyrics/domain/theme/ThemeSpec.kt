@@ -118,7 +118,9 @@ data class ThemeConfig(
     val themeId: String = ThemeSpecs.AMBER.id,
     val typeface: ThemeTypeface = ThemeTypeface.SANS,
     val sizeMode: ThemeSizeMode = ThemeSizeMode.AUTO,
-    val creditMode: ThemeCreditMode = ThemeCreditMode.NONE
+    val creditMode: ThemeCreditMode = ThemeCreditMode.NONE,
+    val useAlbumArtBackdrop: Boolean = false,
+    val showRefreshButton: Boolean = true
 ) {
     val themeSpec: ThemeSpec get() = ThemeSpecs.findById(themeId)
 }

@@ -322,6 +322,7 @@ object LyricRenderer {
         padTopDp: Float? = null,
         padBottomDp: Float? = null,
         padHorizontalDp: Float = 20f,
+        albumArtBitmap: Bitmap? = null,
         displayMetricsWidth: Int = context.resources.displayMetrics.widthPixels,
         displayMetricsHeight: Int = context.resources.displayMetrics.heightPixels
     ): Bitmap {
@@ -344,8 +345,31 @@ object LyricRenderer {
         val density = effectiveDensity
         val spec = config.themeSpec
 
-        // 1. Draw edge-to-edge theme background
-        canvas.drawColor(spec.backgroundColor)
+        // 1. Draw edge-to-edge background (either blurred album art with dark scrim or solid theme color)
+        if (config.useAlbumArtBackdrop && albumArtBitmap != null && !albumArtBitmap.isRecycled) {
+            val srcW = albumArtBitmap.width
+            val srcH = albumArtBitmap.height
+            val srcAspect = srcW.toFloat() / srcH.toFloat()
+            val dstAspect = w.toFloat() / h.toFloat()
+
+            val srcRect = if (srcAspect > dstAspect) {
+                val cropW = (srcH * dstAspect).toInt()
+                val left = (srcW - cropW) / 2
+                android.graphics.Rect(left, 0, left + cropW, srcH)
+            } else {
+                val cropH = (srcW / dstAspect).toInt()
+                val top = (srcH - cropH) / 2
+                android.graphics.Rect(0, top, srcW, top + cropH)
+            }
+            val dstRect = android.graphics.Rect(0, 0, w, h)
+            val blurPaint = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
+            canvas.drawBitmap(albumArtBitmap, srcRect, dstRect, blurPaint)
+
+            // Scrim: 58% black overlay ensures white/amber lyrics maintain high contrast
+            canvas.drawColor(AndroidColor.argb((255 * 0.58f).roundToInt(), 0, 0, 0))
+        } else {
+            canvas.drawColor(spec.backgroundColor)
+        }
 
         // 2. Padding bounds (decoupled: caller can specify top/bottom for Stage vs Widget)
         val hasFooter = config.creditMode != ThemeCreditMode.NONE && (artistName.isNotBlank() || songTitle.isNotBlank())

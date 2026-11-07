@@ -58,6 +58,10 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import com.widgy.lyrics.data.image.ArtworkManager
+import com.widgy.lyrics.data.image.StackBlur
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -148,6 +152,26 @@ fun ThemeStudioScreen(
     val activeTitle = dailyLyric?.songTitle ?: "Timi Ra Ma"
     val activeArtist = dailyLyric?.artistName ?: "Pariwartan"
 
+    val artworkManager = remember { ArtworkManager(context) }
+    var albumArtBitmap by remember { mutableStateOf<Bitmap?>(null) }
+
+    LaunchedEffect(dailyLyric?.songId, config.useAlbumArtBackdrop) {
+        if (config.useAlbumArtBackdrop) {
+            val songId = dailyLyric?.songId ?: 0L
+            val art = withContext(Dispatchers.IO) {
+                artworkManager.getOrFetchArtworkBitmap(
+                    songId = songId,
+                    title = activeTitle,
+                    artist = activeArtist,
+                    maxDimension = 200
+                )
+            }
+            albumArtBitmap = if (art != null) StackBlur.blur(art, 22) else null
+        } else {
+            albumArtBitmap = null
+        }
+    }
+
     // Single non-scrolling full-height container
     Column(
         modifier = Modifier
@@ -172,7 +196,7 @@ fun ThemeStudioScreen(
                 val widthPx = (maxWidth.value * density).toInt()
                 val heightPx = (maxHeight.value * density).toInt()
 
-                val previewBitmap = remember(config, activeLines, activeTitle, activeArtist, widthPx, heightPx) {
+                val previewBitmap = remember(config, activeLines, activeTitle, activeArtist, widthPx, heightPx, albumArtBitmap) {
                     if (widthPx > 50 && heightPx > 50) {
                         LyricRenderer.render(
                             context = context,
@@ -183,7 +207,8 @@ fun ThemeStudioScreen(
                             widthPx = widthPx,
                             heightPx = heightPx,
                             padTopDp = 76f,
-                            padBottomDp = if (config.creditMode != ThemeCreditMode.NONE) 56f else 40f
+                            padBottomDp = if (config.creditMode != ThemeCreditMode.NONE) 56f else 40f,
+                            albumArtBitmap = albumArtBitmap
                         )
                     } else null
                 }
@@ -435,6 +460,48 @@ fun ThemeStudioScreen(
                                         onClick = { update(config.copy(creditMode = credit)) }
                                     )
                                 }
+                            }
+                        }
+
+                        // Row 4: Album Art Backdrop
+                        ConfigRow(
+                            label = "Art",
+                            colors = colors
+                        ) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                PillChip(
+                                    text = "Solid Theme",
+                                    isSelected = !config.useAlbumArtBackdrop,
+                                    colors = colors,
+                                    onClick = { update(config.copy(useAlbumArtBackdrop = false)) }
+                                )
+                                PillChip(
+                                    text = "Blurred Art",
+                                    isSelected = config.useAlbumArtBackdrop,
+                                    colors = colors,
+                                    onClick = { update(config.copy(useAlbumArtBackdrop = true)) }
+                                )
+                            }
+                        }
+
+                        // Row 5: Shuffle Button on Widget
+                        ConfigRow(
+                            label = "Shuffle",
+                            colors = colors
+                        ) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                PillChip(
+                                    text = "Show ↻",
+                                    isSelected = config.showRefreshButton,
+                                    colors = colors,
+                                    onClick = { update(config.copy(showRefreshButton = true)) }
+                                )
+                                PillChip(
+                                    text = "Hidden",
+                                    isSelected = !config.showRefreshButton,
+                                    colors = colors,
+                                    onClick = { update(config.copy(showRefreshButton = false)) }
+                                )
                             }
                         }
                     }

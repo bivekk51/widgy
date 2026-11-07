@@ -79,6 +79,9 @@ class WidgetPreferences(context: Context) {
 
     fun getThemeConfig(): ThemeConfig {
         val themeId = prefs.getString("theme_id", null)
+        val useAlbumArt = prefs.getBoolean("theme_use_album_art", false)
+        val showRefresh = prefs.getBoolean("theme_show_refresh_btn", true)
+
         if (themeId != null) {
             val typefaceStr = prefs.getString("theme_typeface", ThemeTypeface.SANS.name) ?: ThemeTypeface.SANS.name
             val sizeModeStr = prefs.getString("theme_size_mode", ThemeSizeMode.AUTO.name) ?: ThemeSizeMode.AUTO.name
@@ -87,7 +90,9 @@ class WidgetPreferences(context: Context) {
                 themeId = themeId,
                 typeface = runCatching { ThemeTypeface.valueOf(typefaceStr) }.getOrDefault(ThemeTypeface.SANS),
                 sizeMode = runCatching { ThemeSizeMode.valueOf(sizeModeStr) }.getOrDefault(ThemeSizeMode.AUTO),
-                creditMode = runCatching { ThemeCreditMode.valueOf(creditModeStr) }.getOrDefault(ThemeCreditMode.NONE)
+                creditMode = runCatching { ThemeCreditMode.valueOf(creditModeStr) }.getOrDefault(ThemeCreditMode.NONE),
+                useAlbumArtBackdrop = useAlbumArt,
+                showRefreshButton = showRefresh
             )
         }
 
@@ -126,7 +131,9 @@ class WidgetPreferences(context: Context) {
                 themeId = mappedThemeId,
                 typeface = mappedTypeface,
                 sizeMode = mappedSize,
-                creditMode = mappedCredit
+                creditMode = mappedCredit,
+                useAlbumArtBackdrop = useAlbumArt,
+                showRefreshButton = showRefresh
             )
         }
 
@@ -135,7 +142,9 @@ class WidgetPreferences(context: Context) {
             themeId = ThemeSpecs.AMBER.id,
             typeface = ThemeTypeface.SANS,
             sizeMode = ThemeSizeMode.AUTO,
-            creditMode = ThemeCreditMode.NONE
+            creditMode = ThemeCreditMode.NONE,
+            useAlbumArtBackdrop = useAlbumArt,
+            showRefreshButton = showRefresh
         )
     }
 
@@ -145,6 +154,8 @@ class WidgetPreferences(context: Context) {
             .putString("theme_typeface", config.typeface.name)
             .putString("theme_size_mode", config.sizeMode.name)
             .putString("theme_credit_mode", config.creditMode.name)
+            .putBoolean("theme_use_album_art", config.useAlbumArtBackdrop)
+            .putBoolean("theme_show_refresh_btn", config.showRefreshButton)
             // Also keep legacy keys in sync for backward compatibility
             .putString("template", config.themeId.uppercase())
             .putString("font_family", when (config.typeface) {
