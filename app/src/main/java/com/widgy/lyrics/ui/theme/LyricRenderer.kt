@@ -323,6 +323,7 @@ object LyricRenderer {
         padBottomDp: Float? = null,
         padHorizontalDp: Float = 20f,
         albumArtBitmap: Bitmap? = null,
+        capPixels: Boolean = true,
         displayMetricsWidth: Int = context.resources.displayMetrics.widthPixels,
         displayMetricsHeight: Int = context.resources.displayMetrics.heightPixels
     ): Bitmap {
@@ -333,7 +334,7 @@ object LyricRenderer {
         val maxAllowedPixels = 500_000L
         val currentPixels = w.toLong() * h.toLong()
         var effectiveDensity = context.resources.displayMetrics.density
-        if (currentPixels > maxAllowedPixels && currentPixels > 0) {
+        if (capPixels && currentPixels > maxAllowedPixels && currentPixels > 0) {
             val scale = sqrt(maxAllowedPixels.toDouble() / currentPixels.toDouble()).toFloat()
             w = max((w * scale).roundToInt(), 100)
             h = max((h * scale).roundToInt(), 100)

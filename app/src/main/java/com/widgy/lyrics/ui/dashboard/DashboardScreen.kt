@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -307,26 +308,57 @@ private fun TodayLyricLiveCard(
                 }
             }
 
-            // Refresh button top-right
+            // Action buttons top-right (Share, Shuffle)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(8.dp),
                 contentAlignment = Alignment.TopEnd
             ) {
-                if (isRefreshing) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(18.dp),
-                        color = Color.White,
-                        strokeWidth = 2.dp
-                    )
-                } else {
-                    IconButton(onClick = onRefreshClick) {
-                        Icon(
-                            Icons.Default.Refresh,
-                            contentDescription = "Shuffle Lyric",
-                            tint = Color(0x99FFFFFF)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (dailyLyric != null) {
+                        IconButton(
+                            onClick = {
+                                val lines = dailyLyric.text.trim().lines().map { it.trim() }.filter { it.isNotBlank() }
+                                val storyBitmap = com.widgy.lyrics.ui.share.ShareCardHelper.generateStoryCard(
+                                    context = context,
+                                    config = themeConfig,
+                                    lines = lines,
+                                    songTitle = dailyLyric.songTitle,
+                                    artistName = dailyLyric.artistName,
+                                    albumArtBitmap = albumArtBitmap,
+                                    isStoryFormat = true
+                                )
+                                com.widgy.lyrics.ui.share.ShareCardHelper.shareLyricCard(
+                                    context = context,
+                                    bitmap = storyBitmap,
+                                    songTitle = dailyLyric.songTitle,
+                                    artistName = dailyLyric.artistName
+                                )
+                            }
+                        ) {
+                            Icon(
+                                Icons.Default.Share,
+                                contentDescription = "Share Story Card",
+                                tint = Color(0xCCFFFFFF)
+                            )
+                        }
+                    }
+
+                    if (isRefreshing) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.padding(8.dp).size(20.dp),
+                            color = Color.White,
+                            strokeWidth = 2.dp
                         )
+                    } else {
+                        IconButton(onClick = onRefreshClick) {
+                            Icon(
+                                Icons.Default.Refresh,
+                                contentDescription = "Shuffle Lyric",
+                                tint = Color(0xCCFFFFFF)
+                            )
+                        }
                     }
                 }
             }

@@ -35,6 +35,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -529,6 +530,40 @@ fun ThemeStudioScreen(
                             text = if (isEditingLines) "Done" else "Edit lines",
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Medium
+                        )
+                    }
+
+                    // Share Story Card Button
+                    IconButton(
+                        onClick = {
+                            scope.launch(Dispatchers.IO) {
+                                val storyBitmap = com.widgy.lyrics.ui.share.ShareCardHelper.generateStoryCard(
+                                    context = context,
+                                    config = config,
+                                    lines = activeLines,
+                                    songTitle = activeTitle,
+                                    artistName = activeArtist,
+                                    albumArtBitmap = albumArtBitmap,
+                                    isStoryFormat = true
+                                )
+                                com.widgy.lyrics.ui.share.ShareCardHelper.shareLyricCard(
+                                    context = context,
+                                    bitmap = storyBitmap,
+                                    songTitle = activeTitle,
+                                    artistName = activeArtist
+                                )
+                            }
+                        },
+                        modifier = Modifier
+                            .size(52.dp)
+                            .clip(CircleShape)
+                            .background(colors.chipBg)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Share,
+                            contentDescription = "Share Story Card",
+                            tint = colors.textPrimary,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
 
