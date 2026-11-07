@@ -25,7 +25,8 @@ data class DashboardUiState(
     val themeConfig: ThemeConfig = ThemeConfig(),
     val isRefreshingLyric: Boolean = false,
     val isLoading: Boolean = false,
-    val isLyricPinned: Boolean = false
+    val isLyricPinned: Boolean = false,
+    val rotationIntervalHours: Int = 24
 )
 
 class DashboardViewModel(
@@ -79,7 +80,16 @@ class DashboardViewModel(
     fun reloadConfig(context: Context) {
         val config = WidgetPreferences(context).getConfig()
         val themeConfig = WidgetPreferences(context).getThemeConfig()
-        _uiState.update { it.copy(widgetConfig = config, themeConfig = themeConfig) }
+        val interval = WidgetPreferences(context).getRotationIntervalHours()
+        _uiState.update { it.copy(widgetConfig = config, themeConfig = themeConfig, rotationIntervalHours = interval) }
+    }
+
+    fun updateRotationInterval(hours: Int, context: Context) {
+        val prefs = WidgetPreferences(context)
+        prefs.setRotationIntervalHours(hours)
+        _uiState.update { it.copy(rotationIntervalHours = hours) }
+        WidgetUpdateManager.scheduleRotation(context, hours)
+        refreshTodayLyric(context)
     }
 
     fun updateThemeConfig(newConfig: ThemeConfig, context: Context) {

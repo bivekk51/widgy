@@ -39,7 +39,11 @@ class DailyRotationEngine(
         return candidates
     }
 
-    suspend fun resolveDailyLyric(date: LocalDate, forceRefresh: Boolean = false): DailyLyric? {
+    suspend fun resolveDailyLyric(
+        date: LocalDate,
+        forceRefresh: Boolean = false,
+        intervalHours: Int = 24
+    ): DailyLyric? {
         if (!forceRefresh) {
             val pinned = pinnedLyricProvider?.invoke()
             if (pinned != null) {
@@ -48,7 +52,14 @@ class DailyRotationEngine(
         }
 
         val dateString = date.format(dateFormatter)
-        val existing = dailyHistoryDao.getDailyLyric(dateString)
+        val historyKey = if (intervalHours in 1..23) {
+            val slot = System.currentTimeMillis() / (intervalHours * 3600 * 1000L)
+            "${dateString}_$slot"
+        } else {
+            dateString
+        }
+
+        val existing = dailyHistoryDao.getDailyLyric(historyKey)
 
         if (!forceRefresh && existing != null) {
             return DailyLyric(
@@ -80,7 +91,10 @@ class DailyRotationEngine(
             }
         } else {
             val epochDay = date.toEpochDay()
-            val rawHash = (epochDay * 31 + seed).hashCode().toLong()
+            val slotOffset = if (intervalHours in 1..23) {
+                (System.currentTimeMillis() / (intervalHours * 3600 * 1000L)) * 17
+            } else 0L
+            val rawHash = (epochDay * 31 + slotOffset + seed).hashCode().toLong()
             val index = (rawHash and 0x7FFFFFFFL).toInt() % candidates.size
             candidates[index]
         }
@@ -103,7 +117,7 @@ class DailyRotationEngine(
                 }
 
                 DailyLyric(
-                    date = dateString,
+                    date = historyKey,
                     songId = selectedCandidate.song.id,
                     snippetId = selectedCandidate.snippet.id,
                     text = text,
@@ -137,7 +151,7 @@ class DailyRotationEngine(
                 }
 
                 DailyLyric(
-                    date = dateString,
+                    date = historyKey,
                     songId = selectedCandidate.song.id,
                     snippetId = null,
                     text = lineText,

@@ -16,9 +16,11 @@ class DailyWidgetWorker(
         return try {
             val db = AppDatabase.getDatabase(appContext)
             val repository = LyricsRepository(db)
-            val dailyLyric = repository.getTodayDailyLyric()
+            val prefs = WidgetPreferences(appContext)
+            val intervalHours = prefs.getRotationIntervalHours()
+            val dailyLyric = repository.getTodayDailyLyric(intervalHours = intervalHours)
             if (dailyLyric != null) {
-                WidgetPreferences(appContext).saveCachedLyric(dailyLyric)
+                prefs.saveCachedLyric(dailyLyric)
             }
             WidgetUpdateManager.updateAllWidgets(appContext)
             Result.success()

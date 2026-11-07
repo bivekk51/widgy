@@ -79,6 +79,15 @@ class WidgetPreferences(context: Context) {
 
     fun isLyricPinned(): Boolean = prefs.getBoolean("is_lyric_pinned", false)
 
+    fun getRotationIntervalHours(): Int {
+        return prefs.getInt("rotation_interval_hours", 24)
+    }
+
+    fun setRotationIntervalHours(hours: Int) {
+        val valid = if (hours in listOf(1, 3, 6, 12, 24)) hours else 24
+        prefs.edit().putInt("rotation_interval_hours", valid).apply()
+    }
+
     fun getPinnedLyric(): DailyLyric? {
         if (!isLyricPinned()) return null
         val text = prefs.getString("pinned_lyric_text", null) ?: return null

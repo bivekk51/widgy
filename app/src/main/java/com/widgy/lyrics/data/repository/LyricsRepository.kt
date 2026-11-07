@@ -114,8 +114,8 @@ class LyricsRepository(
         db.snippetDao().deleteSnippetById(snippetId)
     }
 
-    suspend fun getTodayDailyLyric(forceRefresh: Boolean = false): DailyLyric? {
-        return rotationEngine.resolveDailyLyric(LocalDate.now(), forceRefresh)
+    suspend fun getTodayDailyLyric(forceRefresh: Boolean = false, intervalHours: Int = 24): DailyLyric? {
+        return rotationEngine.resolveDailyLyric(LocalDate.now(), forceRefresh, intervalHours)
     }
 
     fun observeTodayLyric(date: LocalDate = LocalDate.now()): Flow<DailyHistoryEntity?> {
@@ -126,7 +126,7 @@ class LyricsRepository(
         return db.dailyHistoryDao().getAllHistory()
     }
 
-    suspend fun refreshTodayLyric(): DailyLyric? {
-        return rotationEngine.resolveDailyLyric(LocalDate.now(), forceRefresh = true)
+    suspend fun refreshTodayLyric(intervalHours: Int = 24): DailyLyric? {
+        return rotationEngine.resolveDailyLyric(LocalDate.now(), forceRefresh = true, intervalHours = intervalHours)
     }
 }
