@@ -24,7 +24,8 @@ data class DashboardUiState(
     val widgetConfig: WidgetConfig = WidgetConfig(),
     val themeConfig: ThemeConfig = ThemeConfig(),
     val isRefreshingLyric: Boolean = false,
-    val isLoading: Boolean = false
+    val isLoading: Boolean = false,
+    val isLyricPinned: Boolean = false
 )
 
 class DashboardViewModel(
@@ -49,10 +50,29 @@ class DashboardViewModel(
             .launchIn(viewModelScope)
     }
 
-    fun loadTodayLyric() {
+    fun loadTodayLyric(context: Context? = null) {
         viewModelScope.launch {
-            val lyric = repository.getTodayDailyLyric()
-            _uiState.update { it.copy(todayLyric = lyric) }
+            val prefs = context?.let { WidgetPreferences(it) }
+            val pinned = prefs?.getPinnedLyric()
+            val lyric = pinned ?: repository.getTodayDailyLyric()
+            _uiState.update {
+                it.copy(
+                    todayLyric = lyric,
+                    isLyricPinned = prefs?.isLyricPinned() ?: false
+                )
+            }
+        }
+    }
+
+    fun toggleLyricPin(context: Context) {
+        val prefs = WidgetPreferences(context)
+        val currentlyPinned = prefs.isLyricPinned()
+        val newPinned = !currentlyPinned
+        val lyricToPin = if (newPinned) _uiState.value.todayLyric else null
+        prefs.setLyricPinned(newPinned, lyricToPin)
+        _uiState.update { it.copy(isLyricPinned = newPinned) }
+        viewModelScope.launch {
+            WidgetUpdateManager.updateAllWidgets(context)
         }
     }
 

@@ -105,4 +105,28 @@ class DailyRotationEngineTest {
         val stored = db.dailyHistoryDao().getDailyLyric("2026-11-05")
         assertEquals(refreshed?.text, stored?.lyricText)
     }
+
+    @Test
+    fun resolveDailyLyric_whenPinned_alwaysReturnsPinnedLyricAcrossDates() = runBlocking {
+        val pinned = com.widgy.lyrics.domain.model.DailyLyric(
+            date = "2026-11-01",
+            songId = 99L,
+            snippetId = 1L,
+            text = "Pinned favorite lyric line",
+            songTitle = "Favorite Song",
+            artistName = "Favorite Artist"
+        )
+        val pinnedEngine = DailyRotationEngine(
+            db.songDao(),
+            db.snippetDao(),
+            db.dailyHistoryDao(),
+            pinnedLyricProvider = { pinned }
+        )
+
+        val lyricDate1 = pinnedEngine.resolveDailyLyric(LocalDate.of(2026, 11, 7))
+        val lyricDate2 = pinnedEngine.resolveDailyLyric(LocalDate.of(2026, 11, 20))
+
+        assertEquals("Pinned favorite lyric line", lyricDate1?.text)
+        assertEquals("Pinned favorite lyric line", lyricDate2?.text)
+    }
 }

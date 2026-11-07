@@ -15,7 +15,8 @@ class DailyRotationEngine(
     private val songDao: SongDao,
     private val snippetDao: SnippetDao,
     private val dailyHistoryDao: DailyHistoryDao,
-    private val seed: Long = 42L
+    private val seed: Long = 42L,
+    private val pinnedLyricProvider: (() -> DailyLyric?)? = null
 ) {
     private val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
@@ -39,6 +40,13 @@ class DailyRotationEngine(
     }
 
     suspend fun resolveDailyLyric(date: LocalDate, forceRefresh: Boolean = false): DailyLyric? {
+        if (!forceRefresh) {
+            val pinned = pinnedLyricProvider?.invoke()
+            if (pinned != null) {
+                return pinned
+            }
+        }
+
         val dateString = date.format(dateFormatter)
         val existing = dailyHistoryDao.getDailyLyric(dateString)
 

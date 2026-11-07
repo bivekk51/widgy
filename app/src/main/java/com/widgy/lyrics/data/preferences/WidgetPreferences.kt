@@ -77,6 +77,46 @@ class WidgetPreferences(context: Context) {
             .commit()
     }
 
+    fun isLyricPinned(): Boolean = prefs.getBoolean("is_lyric_pinned", false)
+
+    fun getPinnedLyric(): DailyLyric? {
+        if (!isLyricPinned()) return null
+        val text = prefs.getString("pinned_lyric_text", null) ?: return null
+        val songTitle = prefs.getString("pinned_lyric_title", "") ?: ""
+        val artistName = prefs.getString("pinned_lyric_artist", "") ?: ""
+        val songId = prefs.getLong("pinned_lyric_song_id", 0L)
+        val snippetId = prefs.getLong("pinned_lyric_snippet_id", -1L).takeIf { it != -1L }
+        val date = prefs.getString("pinned_lyric_date", "") ?: ""
+        return DailyLyric(
+            date = date,
+            songId = songId,
+            snippetId = snippetId,
+            text = text,
+            songTitle = songTitle,
+            artistName = artistName
+        )
+    }
+
+    fun setLyricPinned(pinned: Boolean, lyric: DailyLyric? = null) {
+        val editor = prefs.edit().putBoolean("is_lyric_pinned", pinned)
+        if (pinned && lyric != null) {
+            editor.putString("pinned_lyric_text", lyric.text)
+                .putString("pinned_lyric_title", lyric.songTitle)
+                .putString("pinned_lyric_artist", lyric.artistName)
+                .putLong("pinned_lyric_song_id", lyric.songId)
+                .putLong("pinned_lyric_snippet_id", lyric.snippetId ?: -1L)
+                .putString("pinned_lyric_date", lyric.date)
+        } else if (!pinned) {
+            editor.remove("pinned_lyric_text")
+                .remove("pinned_lyric_title")
+                .remove("pinned_lyric_artist")
+                .remove("pinned_lyric_song_id")
+                .remove("pinned_lyric_snippet_id")
+                .remove("pinned_lyric_date")
+        }
+        editor.apply()
+    }
+
     fun getThemeConfig(): ThemeConfig {
         val themeId = prefs.getString("theme_id", null)
         val useAlbumArt = prefs.getBoolean("theme_use_album_art", false)

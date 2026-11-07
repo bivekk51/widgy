@@ -24,6 +24,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
@@ -118,6 +120,8 @@ fun DashboardScreen(
                     dailyLyric = state.todayLyric,
                     themeConfig = state.themeConfig,
                     isRefreshing = state.isRefreshingLyric,
+                    isPinned = state.isLyricPinned,
+                    onTogglePin = { viewModel.toggleLyricPin(context) },
                     onRefreshClick = { viewModel.refreshTodayLyric(context) },
                     onClick = {
                         state.todayLyric?.let { onSongClick(it.songId) }
@@ -209,6 +213,8 @@ private fun TodayLyricLiveCard(
     dailyLyric: DailyLyric?,
     themeConfig: com.widgy.lyrics.domain.theme.ThemeConfig,
     isRefreshing: Boolean,
+    isPinned: Boolean = false,
+    onTogglePin: () -> Unit = {},
     onRefreshClick: () -> Unit,
     onClick: () -> Unit
 ) {
@@ -308,7 +314,35 @@ private fun TodayLyricLiveCard(
                 }
             }
 
-            // Action buttons top-right (Share, Shuffle)
+            // Top-Left: Locked Badge
+            if (isPinned) {
+                Box(
+                    modifier = Modifier
+                        .padding(12.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color(0xCC000000))
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Lock,
+                            contentDescription = null,
+                            tint = Color(0xFFFFB454),
+                            modifier = Modifier.size(12.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "Locked",
+                            color = Color(0xFFFFB454),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+            }
+
+            // Action buttons top-right (Lock, Share, Shuffle)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -317,6 +351,14 @@ private fun TodayLyricLiveCard(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (dailyLyric != null) {
+                        IconButton(onClick = onTogglePin) {
+                            Icon(
+                                imageVector = if (isPinned) Icons.Default.Lock else Icons.Default.LockOpen,
+                                contentDescription = if (isPinned) "Unlock rotation" else "Lock lyric on widget",
+                                tint = if (isPinned) Color(0xFFFFB454) else Color(0xCCFFFFFF)
+                            )
+                        }
+
                         IconButton(
                             onClick = {
                                 val lines = dailyLyric.text.trim().lines().map { it.trim() }.filter { it.isNotBlank() }

@@ -48,8 +48,9 @@ class DailyLyricWidget : GlanceAppWidget() {
         val db = AppDatabase.getDatabase(context)
         val repository = LyricsRepository(db)
         val prefs = WidgetPreferences(context)
+        val pinned = prefs.getPinnedLyric()
         val cached = prefs.getCachedLyric()
-        val dailyLyric = repository.getTodayDailyLyric() ?: cached?.let {
+        val dailyLyric = pinned ?: repository.getTodayDailyLyric() ?: cached?.let {
             DailyLyric(
                 date = "",
                 songId = it.songId,
