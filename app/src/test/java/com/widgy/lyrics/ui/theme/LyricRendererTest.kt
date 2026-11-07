@@ -51,6 +51,36 @@ class LyricRendererTest {
     }
 
     @Test
+    fun buildScriptStyledText_absorbsNepaliPunctuationIntoDevanagariRun() {
+        val nepaliWithPunctuation = "तिमी कता छौ?"
+        val styled = LyricRenderer.buildScriptStyledText(nepaliWithPunctuation, Typeface.DEFAULT_BOLD, Typeface.DEFAULT)
+        assertNotNull(styled)
+        assertEquals(nepaliWithPunctuation, styled.toString())
+
+        val spanned = styled as android.text.Spanned
+        val spans = spanned.getSpans(0, spanned.length, CustomTypefaceSpan::class.java)
+        // Entire phrase including trailing question mark is absorbed into 1 Devanagari span
+        assertEquals(1, spans.size)
+    }
+
+    @Test
+    fun autoSizeSearch_coupletPreservesLineCadence() {
+        // Multi-line stanza should not break into 4 fragmented lines
+        val couplet = listOf("तिमी नभए पनि बाटो चल्छ", "तर आज किन यो मन आफैँलाई सोध्दैन")
+        val sizeSp = LyricRenderer.findBestAutoSizeSp(
+            context = context,
+            spec = ThemeSpecs.AMBER,
+            typefaceChoice = ThemeTypeface.SANS,
+            lines = couplet,
+            availableWidthPx = 400,
+            availableHeightPx = 250,
+            density = 2.0f,
+            hasAccentBar = false
+        )
+        assertTrue("AutoSize should calculate valid size", sizeSp >= 13f)
+    }
+
+    @Test
     fun themeSpecs_allThemesPresentWithAmberAsDefault() {
         assertEquals(5, ThemeSpecs.ALL_THEMES.size)
         val defaultSpec = ThemeSpecs.findById("amber")

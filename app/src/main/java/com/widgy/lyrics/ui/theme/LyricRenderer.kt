@@ -74,14 +74,19 @@ object LyricRenderer {
         val block = Character.UnicodeBlock.of(c)
         return block == Character.UnicodeBlock.DEVANAGARI ||
                 block == Character.UnicodeBlock.DEVANAGARI_EXTENDED ||
-                block == Character.UnicodeBlock.VEDIC_EXTENSIONS
+                block == Character.UnicodeBlock.VEDIC_EXTENSIONS ||
+                c == '।' || c == '॥'
+    }
+
+    private fun isLatinLetter(c: Char): Boolean {
+        return (c in 'a'..'z') || (c in 'A'..'Z')
     }
 
     /**
      * Splits text into script runs:
-     * Devanagari characters receive [devanagariTf], while Latin characters, digits,
-     * and punctuation receive [latinTf]. This avoids missing-glyph tofu boxes and
-     * font metric corruption when mixing English and Nepali lyrics.
+     * Devanagari characters receive [devanagariTf], while Latin characters receive [latinTf].
+     * Trailing punctuation and neutral marks within or following a Devanagari phrase
+     * are absorbed into the Devanagari run to preserve baseline alignment and stroke weight.
      */
     fun buildScriptStyledText(
         text: String,
@@ -93,8 +98,29 @@ object LyricRenderer {
         while (i < text.length) {
             if (isDevanagariChar(text[i])) {
                 val start = i
-                while (i < text.length && (isDevanagariChar(text[i]) || text[i] == ' ' || text[i] == '।' || text[i] == '॥')) {
-                    i++
+                while (i < text.length) {
+                    val c = text[i]
+                    if (isDevanagariChar(c)) {
+                        i++
+                    } else if (!isLatinLetter(c)) {
+                        // Neutral char (space, punctuation, digits)
+                        var nextLetterIsLatin = false
+                        for (j in (i + 1) until text.length) {
+                            if (isLatinLetter(text[j])) {
+                                nextLetterIsLatin = true
+                                break
+                            } else if (isDevanagariChar(text[j])) {
+                                break
+                            }
+                        }
+                        if (nextLetterIsLatin) {
+                            break
+                        } else {
+                            i++
+                        }
+                    } else {
+                        break
+                    }
                 }
                 ssb.setSpan(
                     CustomTypefaceSpan(devanagariTf),
@@ -189,7 +215,8 @@ object LyricRenderer {
             )
 
             // Check: height fits AND lines don't break into excessive fragments
-            val maxAllowedLines = max(lines.size * 2, 2)
+            // Single lines can wrap once; multi-line couplets preserve their exact line boundaries
+            val maxAllowedLines = lines.size + (if (lines.size <= 1) 1 else 0)
             var fitsHorizontally = true
             for (lineIdx in 0 until layout.lineCount) {
                 if (layout.getLineWidth(lineIdx) > safeWidth + 1) {

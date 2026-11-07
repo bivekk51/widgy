@@ -2,6 +2,7 @@ package com.widgy.lyrics.ui.lyrics
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -93,49 +95,55 @@ fun LyricsViewerScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .navigationBarsPadding()
                         .padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     OutlinedButton(
                         onClick = { viewModel.saveAsRandomPool(context, onSaved) },
                         modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(10.dp)
+                        shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text("Add to Random Pool", fontSize = 12.sp, maxLines = 1)
+                        Text("Random Pool", fontSize = 13.sp, maxLines = 1)
                     }
 
-                    if (state.selectedLineIndices.isNotEmpty() || state.customSnippetOverride != null) {
-                        Spacer(modifier = Modifier.width(6.dp))
+                    val hasSelection = state.selectedLineIndices.isNotEmpty() || state.customSnippetOverride != null
+                    if (hasSelection) {
                         IconButton(
                             onClick = { viewModel.openSnippetEditor() },
                             modifier = Modifier
-                                .clip(RoundedCornerShape(10.dp))
+                                .size(40.dp)
+                                .clip(RoundedCornerShape(12.dp))
                                 .background(MaterialTheme.colorScheme.secondaryContainer)
                         ) {
                             Icon(
                                 Icons.Default.Edit,
                                 contentDescription = "Edit snippet",
-                                tint = MaterialTheme.colorScheme.onSecondaryContainer
+                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                modifier = Modifier.size(18.dp)
                             )
                         }
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Button(
-                            onClick = { viewModel.saveSelectedSnippets(context, onSaved) },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(10.dp)
-                        ) {
-                            val lineCount = state.selectedLineIndices.size
-                            val label = when {
-                                state.customSnippetOverride != null -> "Save Snippet"
-                                lineCount == 1 -> "Save (1 line)"
-                                else -> "Save (2 lines)"
-                            }
-                            Text(
-                                text = label,
-                                fontSize = 12.sp,
-                                maxLines = 1
-                            )
+                    }
+
+                    Button(
+                        onClick = { viewModel.saveSelectedSnippets(context, onSaved) },
+                        enabled = hasSelection,
+                        modifier = Modifier.weight(1.2f),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        val lineCount = state.selectedLineIndices.size
+                        val label = when {
+                            state.customSnippetOverride != null -> "Save Snippet"
+                            lineCount == 0 -> "Select Lines"
+                            lineCount == 1 -> "Save (1 line)"
+                            else -> "Save ($lineCount lines)"
                         }
+                        Text(
+                            text = label,
+                            fontSize = 13.sp,
+                            maxLines = 1
+                        )
                     }
                 }
             }
@@ -159,17 +167,23 @@ fun LyricsViewerScreen(
                             modifier = Modifier.fillMaxWidth(),
                             minLines = 2,
                             maxLines = 4,
-                            shape = RoundedCornerShape(8.dp)
+                            shape = RoundedCornerShape(12.dp)
                         )
                     }
                 },
                 confirmButton = {
-                    Button(onClick = { viewModel.confirmSnippetEdit() }) {
+                    Button(
+                        onClick = { viewModel.confirmSnippetEdit() },
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
                         Text("Confirm")
                     }
                 },
                 dismissButton = {
-                    OutlinedButton(onClick = { viewModel.cancelSnippetEdit() }) {
+                    OutlinedButton(
+                        onClick = { viewModel.cancelSnippetEdit() },
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
                         Text("Cancel")
                     }
                 }
@@ -214,9 +228,9 @@ fun LyricsViewerScreen(
                                     colors = CardDefaults.cardColors(
                                         containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                                     ),
-                                    shape = RoundedCornerShape(12.dp)
+                                    shape = RoundedCornerShape(16.dp)
                                 ) {
-                                    Column(modifier = Modifier.padding(14.dp)) {
+                                    Column(modifier = Modifier.padding(16.dp)) {
                                         Text(
                                             text = "Custom Track Details",
                                             style = MaterialTheme.typography.titleSmall,
@@ -230,7 +244,8 @@ fun LyricsViewerScreen(
                                             },
                                             label = { Text("Song Title *") },
                                             modifier = Modifier.fillMaxWidth(),
-                                            singleLine = true
+                                            singleLine = true,
+                                            shape = RoundedCornerShape(12.dp)
                                         )
                                         Spacer(modifier = Modifier.height(8.dp))
                                         OutlinedTextField(
@@ -240,7 +255,8 @@ fun LyricsViewerScreen(
                                             },
                                             label = { Text("Artist Name *") },
                                             modifier = Modifier.fillMaxWidth(),
-                                            singleLine = true
+                                            singleLine = true,
+                                            shape = RoundedCornerShape(12.dp)
                                         )
                                         Spacer(modifier = Modifier.height(8.dp))
                                         OutlinedTextField(
@@ -252,7 +268,8 @@ fun LyricsViewerScreen(
                                             placeholder = { Text("Paste song lyrics or type individual lines...") },
                                             modifier = Modifier.fillMaxWidth(),
                                             minLines = 4,
-                                            maxLines = 8
+                                            maxLines = 8,
+                                            shape = RoundedCornerShape(12.dp)
                                         )
                                     }
                                 }
@@ -268,7 +285,7 @@ fun LyricsViewerScreen(
                                     colors = CardDefaults.cardColors(
                                         containerColor = MaterialTheme.colorScheme.primaryContainer
                                     ),
-                                    shape = RoundedCornerShape(10.dp)
+                                    shape = RoundedCornerShape(16.dp)
                                 ) {
                                     Row(
                                         modifier = Modifier.padding(12.dp),

@@ -107,7 +107,7 @@ fun ScrapbookScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     item {
                         Text(
@@ -230,7 +230,7 @@ private fun ScrapbookCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             Text(
                 text = entity.lyricText,
@@ -258,7 +258,7 @@ private fun ScrapbookCard(
             ) {
                 OutlinedButton(
                     onClick = onShare,
-                    shape = RoundedCornerShape(10.dp)
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(14.dp))
                     Spacer(modifier = Modifier.width(6.dp))
@@ -269,7 +269,7 @@ private fun ScrapbookCard(
 
                 OutlinedButton(
                     onClick = onTogglePin,
-                    shape = RoundedCornerShape(10.dp)
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     Icon(
                         imageVector = if (isPinned) Icons.Default.Lock else Icons.Default.LockOpen,

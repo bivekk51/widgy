@@ -109,6 +109,12 @@ private fun WidgetContent(
             }
     } else null
 
+    val isWide = size.width.value >= 260f
+    val isCompactHeight = size.height.value <= 170f
+    val resolvedPadHorizontal = if (isWide) 26f else 18f
+    val resolvedPadTop = if (themeConfig.showRefreshButton && isCompactHeight) 32f else 20f
+    val resolvedPadBottom = if (themeConfig.creditMode != com.widgy.lyrics.domain.theme.ThemeCreditMode.NONE) 36f else 20f
+
     val bitmap = androidx.compose.runtime.remember(themeConfig, lines, songTitle, artistName, widthPx, heightPx, albumArtBitmap) {
         LyricRenderer.render(
             context = context,
@@ -118,9 +124,9 @@ private fun WidgetContent(
             artistName = artistName,
             widthPx = widthPx,
             heightPx = heightPx,
-            padTopDp = 18f,
-            padBottomDp = if (themeConfig.creditMode != com.widgy.lyrics.domain.theme.ThemeCreditMode.NONE) 36f else 18f,
-            padHorizontalDp = 18f,
+            padTopDp = resolvedPadTop,
+            padBottomDp = resolvedPadBottom,
+            padHorizontalDp = resolvedPadHorizontal,
             albumArtBitmap = albumArtBitmap
         )
     }
@@ -150,7 +156,7 @@ private fun WidgetContent(
                         .padding(8.dp)
                         .size(44.dp)
                         .cornerRadius(22.dp)
-                        .background(ColorProvider(Color(0x33000000)))
+                        .background(ColorProvider(Color(0x44000000)))
                         .clickable(actionRunCallback<RefreshLyricActionCallback>()),
                     contentAlignment = Alignment.Center
                 ) {

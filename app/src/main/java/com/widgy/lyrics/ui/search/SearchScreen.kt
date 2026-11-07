@@ -138,7 +138,7 @@ fun SearchScreen(
                             Spacer(modifier = Modifier.height(12.dp))
                             Button(
                                 onClick = onManualEntryClick,
-                                shape = RoundedCornerShape(10.dp)
+                                shape = RoundedCornerShape(12.dp)
                             ) {
                                 Text("Add Custom Lyrics Manually")
                             }
@@ -163,7 +163,7 @@ fun SearchScreen(
                             Spacer(modifier = Modifier.height(16.dp))
                             OutlinedButton(
                                 onClick = onManualEntryClick,
-                                shape = RoundedCornerShape(10.dp)
+                                shape = RoundedCornerShape(12.dp)
                             ) {
                                 Icon(Icons.Default.Add, contentDescription = null)
                                 Spacer(modifier = Modifier.width(6.dp))
@@ -194,12 +194,12 @@ private fun TrackResultItem(
             .fillMaxWidth()
             .padding(vertical = 4.dp)
             .clickable { onClick() },
-        shape = RoundedCornerShape(10.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
         )
     ) {
-        Column(modifier = Modifier.padding(14.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = track.displayTitle,
                 fontWeight = FontWeight.SemiBold,

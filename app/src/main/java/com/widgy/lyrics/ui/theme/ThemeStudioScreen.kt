@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -301,7 +302,7 @@ fun ThemeStudioScreen(
                     .padding(top = 64.dp)
             ) {
                 Surface(
-                    shape = RoundedCornerShape(20.dp),
+                    shape = RoundedCornerShape(12.dp),
                     color = Color(0xDD1A1A1E),
                     border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x33FFFFFF)),
                     shadowElevation = 8.dp
@@ -331,8 +332,8 @@ fun ThemeStudioScreen(
                     .fillMaxWidth()
                     .navigationBarsPadding()
                     .imePadding()
-                    .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                    .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 // A. Theme Swatches (horizontally scrollable row of 48dp circles with 12dp gaps)
                 LazyRow(
@@ -533,8 +534,8 @@ fun ThemeStudioScreen(
                     // Secondary Button: "Edit lines" / "Done"
                     Button(
                         onClick = { isEditingLines = !isEditingLines },
-                        modifier = Modifier.height(52.dp),
-                        shape = RoundedCornerShape(26.dp),
+                        modifier = Modifier.height(48.dp),
+                        shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = colors.chipBg,
                             contentColor = colors.textPrimary
@@ -542,7 +543,7 @@ fun ThemeStudioScreen(
                     ) {
                         Text(
                             text = if (isEditingLines) "Done" else "Edit lines",
-                            fontSize = 15.sp,
+                            fontSize = 14.sp,
                             fontWeight = FontWeight.Medium
                         )
                     }
@@ -569,8 +570,8 @@ fun ThemeStudioScreen(
                             }
                         },
                         modifier = Modifier
-                            .size(52.dp)
-                            .clip(CircleShape)
+                            .size(48.dp)
+                            .clip(RoundedCornerShape(12.dp))
                             .background(colors.chipBg)
                     ) {
                         Icon(
@@ -581,7 +582,7 @@ fun ThemeStudioScreen(
                         )
                     }
 
-                    // Primary Button: "Apply to widget" (flex 1, fill #FFB454, text #2A1700, 52dp height, 26dp radius)
+                    // Primary Button: "Apply to widget" (flex 1, fill #FFB454, text #2A1700, 48dp height, 12dp radius)
                     Button(
                         onClick = {
                             onApplyConfig(config)
@@ -593,8 +594,8 @@ fun ThemeStudioScreen(
                         },
                         modifier = Modifier
                             .weight(1f)
-                            .height(52.dp),
-                        shape = RoundedCornerShape(26.dp),
+                            .height(48.dp),
+                        shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = colors.accentButtonBg,
                             contentColor = colors.accentText
@@ -618,23 +619,21 @@ private fun ConfigRow(
     colors: ThemeStudioColors,
     content: @Composable () -> Unit
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        HorizontalDivider(thickness = 1.dp, color = colors.divider)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = label,
-                color = colors.textSecondary,
-                fontSize = 13.sp,
-                modifier = Modifier.widthIn(min = 58.dp, max = 74.dp)
-            )
-            Box(modifier = Modifier.weight(1f)) {
-                content()
-            }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 3.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            color = colors.textSecondary,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.width(68.dp)
+        )
+        Box(modifier = Modifier.weight(1f)) {
+            content()
         }
     }
 }
@@ -648,18 +647,18 @@ private fun PillChip(
 ) {
     Box(
         modifier = Modifier
-            .height(48.dp) // Accessible 48dp touch target
-            .clip(CircleShape)
+            .defaultMinSize(minHeight = 40.dp)
+            .clip(RoundedCornerShape(8.dp))
             .background(if (isSelected) colors.accentButtonBg else colors.chipBg)
             .clickable { onClick() }
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = 14.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = text,
             color = if (isSelected) colors.accentText else colors.textPrimary,
             fontSize = 13.sp,
-            fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal,
+            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
             maxLines = 1
         )
     }
