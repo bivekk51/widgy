@@ -35,6 +35,12 @@ A minimal Android app for curating song lyrics and displaying them as a home scr
 ./gradlew installDebug   # requires connected device
 ```
 
+## Releases & CI
+
+Automated builds via GitHub Actions:
+- **Release an APK**: push a version tag (e.g. `git tag v1.0.0 && git push origin v1.0.0`) to build and attach the APK to the GitHub **Releases** tab.
+- **Manual Build**: Go to **Actions** → **Build & Release APK** → **Run workflow** on GitHub to get a downloadable APK artifact without creating a release.
+
 ## Notes
 
 - No background services — zero battery drain
