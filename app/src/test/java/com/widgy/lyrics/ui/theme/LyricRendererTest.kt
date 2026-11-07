@@ -43,9 +43,9 @@ class LyricRendererTest {
     }
 
     @Test
-    fun buildMonoStyledText_splitsDevanagariAndLatinRuns() {
+    fun buildScriptStyledText_splitsDevanagariAndLatinRuns() {
         val mixed = "> Timi Ra Ma तिमी र म"
-        val styled = LyricRenderer.buildMonoStyledText(mixed, Typeface.DEFAULT)
+        val styled = LyricRenderer.buildScriptStyledText(mixed, Typeface.DEFAULT_BOLD, Typeface.DEFAULT)
         assertNotNull(styled)
         assertEquals(mixed, styled.toString())
     }
@@ -87,7 +87,24 @@ class LyricRendererTest {
             hasAccentBar = false
         )
 
-        assertTrue("Auto size should be between 13sp and 36sp", sizeSp in 13f..36f)
+        assertTrue("Auto size should be at least 13sp", sizeSp >= 13f)
+    }
+
+    @Test
+    fun autoSizeSearch_scalesUpOnLargeWidget() {
+        val shortLines = listOf("Timi Ra Ma")
+        val sizeSp = LyricRenderer.findBestAutoSizeSp(
+            context = context,
+            spec = ThemeSpecs.AMBER,
+            typefaceChoice = ThemeTypeface.SANS,
+            lines = shortLines,
+            availableWidthPx = 1000,
+            availableHeightPx = 600,
+            density = 2.0f,
+            hasAccentBar = false
+        )
+
+        assertTrue("Short lyrics on large space should scale above 36sp, got $sizeSp", sizeSp > 36f)
     }
 
     @Test
@@ -113,5 +130,33 @@ class LyricRendererTest {
         assertNotNull(bitmap)
         assertEquals(600, bitmap.width)
         assertEquals(400, bitmap.height)
+    }
+
+    @Test
+    fun render_withCustomPaddings_drawsCorrectly() {
+        val lines = listOf("तिमी नभए पनि बाटो चल्छ")
+        val config = ThemeConfig(
+            themeId = ThemeSpecs.TERMINAL.id,
+            typeface = ThemeTypeface.MONO,
+            sizeMode = ThemeSizeMode.AUTO,
+            creditMode = ThemeCreditMode.ARTIST
+        )
+
+        val bitmap = LyricRenderer.render(
+            context = context,
+            config = config,
+            lines = lines,
+            songTitle = "Timi",
+            artistName = "Pariwartan",
+            widthPx = 400,
+            heightPx = 300,
+            padTopDp = 20f,
+            padBottomDp = 36f,
+            padHorizontalDp = 18f
+        )
+
+        assertNotNull(bitmap)
+        assertEquals(400, bitmap.width)
+        assertEquals(300, bitmap.height)
     }
 }

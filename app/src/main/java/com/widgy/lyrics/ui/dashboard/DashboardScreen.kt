@@ -247,7 +247,10 @@ private fun TodayLyricLiveCard(
                                 songTitle = dailyLyric.songTitle,
                                 artistName = dailyLyric.artistName,
                                 widthPx = widthPx,
-                                heightPx = heightPx
+                                heightPx = heightPx,
+                                padTopDp = 18f,
+                                padBottomDp = if (themeConfig.creditMode != com.widgy.lyrics.domain.theme.ThemeCreditMode.NONE) 36f else 18f,
+                                padHorizontalDp = 16f
                             )
                         } else null
                     }

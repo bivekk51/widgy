@@ -99,15 +99,20 @@ private fun WidgetContent(
     val songTitle = dailyLyric?.songTitle ?: ""
     val artistName = dailyLyric?.artistName ?: ""
 
-    val bitmap = rememberBitmap(
-        context = context,
-        themeConfig = themeConfig,
-        lines = lines,
-        songTitle = songTitle,
-        artistName = artistName,
-        widthPx = widthPx,
-        heightPx = heightPx
-    )
+    val bitmap = androidx.compose.runtime.remember(themeConfig, lines, songTitle, artistName, widthPx, heightPx) {
+        LyricRenderer.render(
+            context = context,
+            config = themeConfig,
+            lines = lines,
+            songTitle = songTitle,
+            artistName = artistName,
+            widthPx = widthPx,
+            heightPx = heightPx,
+            padTopDp = 18f,
+            padBottomDp = if (themeConfig.creditMode != com.widgy.lyrics.domain.theme.ThemeCreditMode.NONE) 36f else 18f,
+            padHorizontalDp = 18f
+        )
+    }
 
     Box(
         modifier = GlanceModifier
@@ -123,7 +128,7 @@ private fun WidgetContent(
             modifier = GlanceModifier.fillMaxSize()
         )
 
-        // Top-Right Refresh Button (44dp circle, 8dp padding from edge, never overlaps lyrics text)
+        // Top-Right Refresh Button (40dp circle, 8dp padding from edge, never overlaps lyrics text)
         Box(
             modifier = GlanceModifier.fillMaxSize(),
             contentAlignment = Alignment.TopEnd
@@ -131,8 +136,8 @@ private fun WidgetContent(
             Box(
                 modifier = GlanceModifier
                     .padding(8.dp)
-                    .size(44.dp)
-                    .cornerRadius(22.dp)
+                    .size(40.dp)
+                    .cornerRadius(20.dp)
                     .background(ColorProvider(Color(0x33000000)))
                     .clickable(actionRunCallback<RefreshLyricActionCallback>()),
                 contentAlignment = Alignment.Center
@@ -141,33 +146,13 @@ private fun WidgetContent(
                     text = "↻",
                     style = TextStyle(
                         color = ColorProvider(Color(0xE6FFFFFF)),
-                        fontSize = 18.sp,
+                        fontSize = 17.sp,
                         fontWeight = FontWeight.Bold
                     )
                 )
             }
         }
     }
-}
-
-private fun rememberBitmap(
-    context: Context,
-    themeConfig: ThemeConfig,
-    lines: List<String>,
-    songTitle: String,
-    artistName: String,
-    widthPx: Int,
-    heightPx: Int
-): android.graphics.Bitmap {
-    return LyricRenderer.render(
-        context = context,
-        config = themeConfig,
-        lines = lines,
-        songTitle = songTitle,
-        artistName = artistName,
-        widthPx = widthPx,
-        heightPx = heightPx
-    )
 }
 
 class RefreshLyricActionCallback : ActionCallback {

@@ -70,9 +70,7 @@ fun WidgyNavGraph(
             ThemeStudioScreen(
                 initialConfig = uiState.themeConfig,
                 dailyLyric = uiState.todayLyric,
-                onConfigChanged = { updatedConfig ->
-                    dashboardViewModel.updateThemeConfig(updatedConfig, context)
-                },
+                onConfigChanged = { /* Live preview in ThemeStudio; only persist on apply */ },
                 onApplyConfig = { newConfig ->
                     dashboardViewModel.updateThemeConfig(newConfig, context)
                     navController.popBackStack()

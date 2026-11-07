@@ -164,7 +164,7 @@ class WidgetPreferences(context: Context) {
                 ThemeCreditMode.ARTIST -> WidgetAttribution.ARTIST_ONLY.name
                 ThemeCreditMode.SONG_AND_ARTIST -> WidgetAttribution.SONG_AND_ARTIST.name
             })
-            .commit()
+            .apply()
     }
 
     fun getConfig(): WidgetConfig {

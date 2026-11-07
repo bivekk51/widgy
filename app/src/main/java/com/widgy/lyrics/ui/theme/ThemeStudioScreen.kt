@@ -19,10 +19,14 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -177,7 +181,9 @@ fun ThemeStudioScreen(
                             songTitle = activeTitle,
                             artistName = activeArtist,
                             widthPx = widthPx,
-                            heightPx = heightPx
+                            heightPx = heightPx,
+                            padTopDp = 76f,
+                            padBottomDp = if (config.creditMode != ThemeCreditMode.NONE) 56f else 40f
                         )
                     } else null
                 }
@@ -195,6 +201,7 @@ fun ThemeStudioScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .statusBarsPadding()
                     .padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -271,12 +278,10 @@ fun ThemeStudioScreen(
         }
 
         // ==========================================
-        // 2. DOCK (overlaps stage by 20dp, radius 24dp)
+        // 2. DOCK (24dp top corner radius)
         // ==========================================
         Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .offset(y = (-20).dp), // Stage extends 20dp behind dock
+            modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
             color = colors.dockBg,
             shadowElevation = 16.dp
@@ -284,7 +289,9 @@ fun ThemeStudioScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 28.dp),
+                    .navigationBarsPadding()
+                    .imePadding()
+                    .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 // A. Theme Swatches (horizontally scrollable row of 48dp circles with 12dp gaps)
@@ -341,7 +348,7 @@ fun ThemeStudioScreen(
                     text = "${config.themeSpec.name} · ${config.themeSpec.description}",
                     color = colors.textSecondary,
                     fontSize = 12.sp,
-                    maxLines = 1,
+                    maxLines = 2,
                     modifier = Modifier.padding(horizontal = 2.dp)
                 )
 
@@ -507,7 +514,7 @@ private fun ConfigRow(
                 text = label,
                 color = colors.textSecondary,
                 fontSize = 13.sp,
-                modifier = Modifier.width(52.dp)
+                modifier = Modifier.widthIn(min = 58.dp, max = 74.dp)
             )
             Box(modifier = Modifier.weight(1f)) {
                 content()

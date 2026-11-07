@@ -67,10 +67,10 @@ class LyricsRepository(
             insertNewSong(title, artist, album, plainLyrics, lrclibId, isRandomPool)
         }
 
+        // Always remove existing snippets for this song before inserting,
+        // so re-saving never creates duplicate entries, and clearing snippets works correctly.
+        db.snippetDao().deleteAllSnippetsForSong(songId)
         if (snippets.isNotEmpty()) {
-            // Delete existing snippets for this song before inserting new ones
-            // so re-saving doesn't create duplicate entries.
-            db.snippetDao().deleteAllSnippetsForSong(songId)
             val entities = snippets.map {
                 SnippetEntity(
                     songId = songId,
