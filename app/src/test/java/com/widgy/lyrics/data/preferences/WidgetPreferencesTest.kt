@@ -20,6 +20,10 @@ class WidgetPreferencesTest {
         every { context.getSharedPreferences("widget_prefs", Context.MODE_PRIVATE) } returns prefs
         every { prefs.edit() } returns editor
         every { editor.putString(any(), any()) } returns editor
+        every { editor.putBoolean(any(), any()) } returns editor
+        every { editor.putInt(any(), any()) } returns editor
+        every { editor.putLong(any(), any()) } returns editor
+        every { editor.apply() } returns Unit
         every { editor.commit() } returns true
     }
 
@@ -66,6 +70,23 @@ class WidgetPreferencesTest {
             editor.putString("attribution", WidgetAttribution.SONG_AND_ARTIST.name)
             editor.putString("font_size", WidgetFontSize.SMALL.name)
             editor.commit()
+        }
+    }
+
+    @Test
+    fun saveThemeConfig_savesRefreshButtonAndAlbumArtBooleans() {
+        val widgetPrefs = WidgetPreferences(context)
+        val config = com.widgy.lyrics.domain.theme.ThemeConfig(
+            themeId = "genius",
+            useAlbumArtBackdrop = true,
+            showRefreshButton = false
+        )
+
+        widgetPrefs.saveThemeConfig(config)
+
+        verify {
+            editor.putBoolean("theme_use_album_art", true)
+            editor.putBoolean("theme_show_refresh_btn", false)
         }
     }
 }
