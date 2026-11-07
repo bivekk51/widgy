@@ -82,7 +82,7 @@ class LyricRendererTest {
 
     @Test
     fun themeSpecs_allThemesPresentWithAmberAsDefault() {
-        assertEquals(5, ThemeSpecs.ALL_THEMES.size)
+        assertEquals(11, ThemeSpecs.ALL_THEMES.size)
         val defaultSpec = ThemeSpecs.findById("amber")
         assertEquals("Amber", defaultSpec.name)
         assertEquals(ThemeTypeface.SANS, defaultSpec.defaultTypeface)
@@ -101,6 +101,60 @@ class LyricRendererTest {
         val classicSpec = ThemeSpecs.findById("classic")
         assertTrue(classicSpec.italic)
         assertEquals(ThemeTypeface.SERIF, classicSpec.defaultTypeface)
+
+        val kyotoSpec = ThemeSpecs.findById("kyoto")
+        assertEquals("Kyoto", kyotoSpec.name)
+        assertEquals("※", kyotoSpec.swatchGlyph)
+        assertEquals(ThemeTypeface.SERIF, kyotoSpec.defaultTypeface)
+
+        val olivettiSpec = ThemeSpecs.findById("olivetti")
+        assertEquals("Olivetti", olivettiSpec.name)
+        assertEquals("¶", olivettiSpec.swatchGlyph)
+        assertEquals(ThemeTypeface.MONO, olivettiSpec.defaultTypeface)
+        assertTrue(olivettiSpec.isLeftAligned)
+
+        val bordeauxSpec = ThemeSpecs.findById("bordeaux")
+        assertEquals("Bordeaux", bordeauxSpec.name)
+        assertEquals("§", bordeauxSpec.swatchGlyph)
+        assertTrue(bordeauxSpec.italic)
+
+        val editorialSpec = ThemeSpecs.findById("editorial")
+        assertEquals("Editorial", editorialSpec.name)
+        assertTrue(editorialSpec.uppercase)
+        assertEquals(700, editorialSpec.fontWeight)
+
+        val nordicSpec = ThemeSpecs.findById("nordic")
+        assertEquals("Nordic", nordicSpec.name)
+        assertEquals("Ø", nordicSpec.swatchGlyph)
+
+        val botanicalSpec = ThemeSpecs.findById("botanical")
+        assertEquals("Botanical", botanicalSpec.name)
+        assertEquals(ThemeTypeface.SERIF, botanicalSpec.defaultTypeface)
+    }
+
+    @Test
+    fun render_allElevenThemesProduceValidBitmaps() {
+        val sampleLines = listOf("तिमी नभए पनि बाटो चल्छ", "Every moment is a poetry")
+        for (spec in ThemeSpecs.ALL_THEMES) {
+            val config = ThemeConfig(
+                themeId = spec.id,
+                typeface = spec.defaultTypeface,
+                sizeMode = ThemeSizeMode.AUTO,
+                creditMode = ThemeCreditMode.SONG_AND_ARTIST
+            )
+            val bitmap = LyricRenderer.render(
+                context = context,
+                config = config,
+                lines = sampleLines,
+                songTitle = "Test Song",
+                artistName = "Test Artist",
+                widthPx = 400,
+                heightPx = 300
+            )
+            assertNotNull("Theme ${spec.id} must render valid bitmap", bitmap)
+            assertEquals(400, bitmap.width)
+            assertEquals(300, bitmap.height)
+        }
     }
 
     @Test

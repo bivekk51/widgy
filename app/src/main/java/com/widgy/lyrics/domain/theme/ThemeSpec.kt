@@ -103,7 +103,96 @@ object ThemeSpecs {
         swatchGlyph = "अ"
     )
 
-    val ALL_THEMES = listOf(AMBER, TERMINAL, GENIUS, SPOTIFY, CLASSIC)
+    // --- Curated Expansion (Council Approved) ---
+
+    val KYOTO = ThemeSpec(
+        id = "kyoto",
+        name = "Kyoto",
+        description = "Deep indigo, Japanese washi silk",
+        backgroundColor = 0xFF0B132B.toInt(),
+        foregroundColor = 0xFFEAE5D9.toInt(),
+        defaultTypeface = ThemeTypeface.SERIF,
+        isLeftAligned = false,
+        fontWeight = 500,
+        swatchGlyph = "※"
+    )
+
+    val OLIVETTI = ThemeSpec(
+        id = "olivetti",
+        name = "Olivetti",
+        description = "Industrial putty, typewriter carbon",
+        backgroundColor = 0xFFEBE7DF.toInt(),
+        foregroundColor = 0xFF1C1F22.toInt(),
+        defaultTypeface = ThemeTypeface.MONO,
+        isLeftAligned = true,
+        fontWeight = 500,
+        promptMarker = false,
+        swatchGlyph = "¶"
+    )
+
+    val BORDEAUX = ThemeSpec(
+        id = "bordeaux",
+        name = "Bordeaux",
+        description = "Velvet wine, champagne gold serif",
+        backgroundColor = 0xFF18090E.toInt(),
+        foregroundColor = 0xFFF4E6CC.toInt(),
+        defaultTypeface = ThemeTypeface.SERIF,
+        isLeftAligned = false,
+        fontWeight = 500,
+        italic = true,
+        swatchGlyph = "§"
+    )
+
+    val EDITORIAL = ThemeSpec(
+        id = "editorial",
+        name = "Editorial",
+        description = "Titanium ivory, bold monochrome",
+        backgroundColor = 0xFFF8F7F4.toInt(),
+        foregroundColor = 0xFF121316.toInt(),
+        defaultTypeface = ThemeTypeface.SANS,
+        isLeftAligned = false,
+        fontWeight = 700,
+        uppercase = true,
+        swatchGlyph = "A"
+    )
+
+    val NORDIC = ThemeSpec(
+        id = "nordic",
+        name = "Nordic",
+        description = "Fjord slate, arctic mist sans",
+        backgroundColor = 0xFF0F171E.toInt(),
+        foregroundColor = 0xFFDCEBF5.toInt(),
+        defaultTypeface = ThemeTypeface.SANS,
+        isLeftAligned = false,
+        fontWeight = 500,
+        swatchGlyph = "Ø"
+    )
+
+    val BOTANICAL = ThemeSpec(
+        id = "botanical",
+        name = "Botanical",
+        description = "Deep pine moss, sage porcelain",
+        backgroundColor = 0xFF0B160E.toInt(),
+        foregroundColor = 0xFFE1EEE5.toInt(),
+        defaultTypeface = ThemeTypeface.SERIF,
+        isLeftAligned = false,
+        fontWeight = 500,
+        swatchGlyph = "अ"
+    )
+
+    val ALL_THEMES = listOf(
+        AMBER,
+        TERMINAL,
+        GENIUS,
+        SPOTIFY,
+        CLASSIC,
+        KYOTO,
+        OLIVETTI,
+        BORDEAUX,
+        EDITORIAL,
+        NORDIC,
+        BOTANICAL
+    )
 
     fun findById(id: String): ThemeSpec {
         return ALL_THEMES.find { it.id.equals(id, ignoreCase = true) }
