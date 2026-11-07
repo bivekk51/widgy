@@ -11,7 +11,9 @@ object StackBlur {
      * Performs a fast, visual approximation of Gaussian blur without RenderScript or native NDK.
      */
     fun blur(sentBitmap: Bitmap, radius: Int): Bitmap {
-        if (radius < 1) return sentBitmap
+        if (radius < 1 || sentBitmap.isRecycled || sentBitmap.width <= 0 || sentBitmap.height <= 0) {
+            return sentBitmap
+        }
 
         val bitmap = sentBitmap.copy(Bitmap.Config.ARGB_8888, true)
         val w = bitmap.width
@@ -41,10 +43,6 @@ object StackBlur {
 
         var divsum = (div + 1) shr 1
         divsum *= divsum
-        val dv = IntArray(256 * divsum)
-        for (idx in 0 until 256 * divsum) {
-            dv[idx] = idx / divsum
-        }
 
         yi = 0
         yw = 0
@@ -99,9 +97,9 @@ object StackBlur {
 
             x = 0
             while (x < w) {
-                r[yi] = dv[rsum]
-                g[yi] = dv[gsum]
-                b[yi] = dv[bsum]
+                r[yi] = (rsum / divsum).coerceIn(0, 255)
+                g[yi] = (gsum / divsum).coerceIn(0, 255)
+                b[yi] = (bsum / divsum).coerceIn(0, 255)
 
                 rsum -= routsum
                 gsum -= goutsum
@@ -197,7 +195,10 @@ object StackBlur {
             y = 0
             while (y < h) {
                 // Preserve original alpha or set 0xFF
-                pix[yi] = (-0x1000000 and pix[yi]) or (dv[rsum] shl 16) or (dv[gsum] shl 8) or dv[bsum]
+                val rVal = (rsum / divsum).coerceIn(0, 255)
+                val gVal = (gsum / divsum).coerceIn(0, 255)
+                val bVal = (bsum / divsum).coerceIn(0, 255)
+                pix[yi] = (-0x1000000 and pix[yi]) or (rVal shl 16) or (gVal shl 8) or bVal
 
                 rsum -= routsum
                 gsum -= goutsum

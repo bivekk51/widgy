@@ -6,6 +6,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -43,7 +44,7 @@ fun WidgyNavGraph(
     initialSnippetText: String? = null
 ) {
     val context = LocalContext.current
-    val dashboardViewModel = remember { DashboardViewModel(repository, context) }
+    val dashboardViewModel: DashboardViewModel = viewModel { DashboardViewModel(repository, context) }
     var selectedOnlineTrack = remember { mutableListOf<LrcTrackDto>() }
 
     // Reactively navigate when targetSongId is provided (cold launch or onNewIntent from widget)
@@ -70,7 +71,7 @@ fun WidgyNavGraph(
         }
 
         composable(NavRoutes.SCRAPBOOK) {
-            val scrapbookViewModel = remember { ScrapbookViewModel(repository) }
+            val scrapbookViewModel: ScrapbookViewModel = viewModel { ScrapbookViewModel(repository) }
             ScrapbookScreen(
                 viewModel = scrapbookViewModel,
                 onBack = { navController.popBackStack() }
@@ -93,7 +94,7 @@ fun WidgyNavGraph(
         }
 
         composable(NavRoutes.SEARCH) {
-            val searchViewModel = remember { SearchViewModel() }
+            val searchViewModel: SearchViewModel = viewModel { SearchViewModel() }
             SearchScreen(
                 viewModel = searchViewModel,
                 onTrackSelected = { track ->
@@ -109,7 +110,7 @@ fun WidgyNavGraph(
         }
 
         composable(NavRoutes.MANUAL_ENTRY) {
-            val lyricsViewModel = remember { LyricsViewerViewModel(repository) }
+            val lyricsViewModel: LyricsViewerViewModel = viewModel { LyricsViewerViewModel(repository) }
             LaunchedEffect(Unit) {
                 lyricsViewModel.initManualEntry()
             }
@@ -123,8 +124,10 @@ fun WidgyNavGraph(
         }
 
         composable("lyrics_online") {
-            val lyricsViewModel = remember { LyricsViewerViewModel(repository) }
             val track = selectedOnlineTrack.firstOrNull()
+            val lyricsViewModel: LyricsViewerViewModel = viewModel(key = "online_${track?.id ?: 0}") {
+                LyricsViewerViewModel(repository)
+            }
             LaunchedEffect(track) {
                 if (track != null) {
                     lyricsViewModel.loadTrack(track)
@@ -144,7 +147,9 @@ fun WidgyNavGraph(
             arguments = listOf(navArgument("songId") { type = NavType.LongType })
         ) { backStackEntry ->
             val songId = backStackEntry.arguments?.getLong("songId") ?: -1L
-            val lyricsViewModel = remember { LyricsViewerViewModel(repository) }
+            val lyricsViewModel: LyricsViewerViewModel = viewModel(key = "local_$songId") {
+                LyricsViewerViewModel(repository)
+            }
             LaunchedEffect(songId) {
                 lyricsViewModel.loadLocalSong(songId, initialSnippetText)
             }

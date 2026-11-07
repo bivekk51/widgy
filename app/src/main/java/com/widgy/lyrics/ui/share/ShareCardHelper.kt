@@ -45,7 +45,15 @@ object ShareCardHelper {
 
     fun saveBitmapToShareCache(context: Context, bitmap: Bitmap): File {
         val shareDir = File(context.cacheDir, "share").apply { if (!exists()) mkdirs() }
-        val shareFile = File(shareDir, "widgy_lyric_card.png")
+        // Clean cached share files older than 1 hour
+        runCatching {
+            shareDir.listFiles()?.forEach { oldFile ->
+                if (System.currentTimeMillis() - oldFile.lastModified() > 3600_000L) {
+                    oldFile.delete()
+                }
+            }
+        }
+        val shareFile = File(shareDir, "widgy_lyric_${System.currentTimeMillis()}.png")
         FileOutputStream(shareFile).use { out ->
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
         }
@@ -68,6 +76,7 @@ object ShareCardHelper {
         val shareIntent = Intent(Intent.ACTION_SEND).apply {
             type = "image/png"
             putExtra(Intent.EXTRA_STREAM, uri)
+            clipData = android.content.ClipData.newRawUri(null, uri)
             val caption = if (songTitle.isNotBlank() && artistName.isNotBlank()) {
                 "\"$songTitle\" by $artistName · Widgy"
             } else {
@@ -78,6 +87,7 @@ object ShareCardHelper {
         }
 
         val chooser = Intent.createChooser(shareIntent, "Share Lyric Card").apply {
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         context.startActivity(chooser)

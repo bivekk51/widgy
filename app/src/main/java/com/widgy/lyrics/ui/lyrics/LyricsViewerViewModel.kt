@@ -74,6 +74,28 @@ class LyricsViewerViewModel(
         }
     }
 
+    fun updateManualMetadata(title: String, artist: String) {
+        _uiState.update {
+            it.copy(
+                title = title,
+                artist = artist
+            )
+        }
+    }
+
+    fun updateManualLyrics(rawLyrics: String) {
+        val cleaned = LyricsCleaner.cleanLyrics(rawLyrics)
+        _uiState.update {
+            it.copy(
+                rawLyrics = rawLyrics,
+                lines = cleaned,
+                selectedLineIndices = emptySet(),
+                customSnippetOverride = null,
+                selectionWarning = null
+            )
+        }
+    }
+
     fun updateManualFields(title: String, artist: String, rawLyrics: String) {
         val cleaned = LyricsCleaner.cleanLyrics(rawLyrics)
         _uiState.update {

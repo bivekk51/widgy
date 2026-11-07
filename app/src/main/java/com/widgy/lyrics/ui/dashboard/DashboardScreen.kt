@@ -48,6 +48,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -272,6 +274,7 @@ private fun TodayLyricLiveCard(
     onClick: () -> Unit
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
+    val scope = rememberCoroutineScope()
     val artworkManager = remember { com.widgy.lyrics.data.image.ArtworkManager(context) }
     var albumArtBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
 
@@ -414,22 +417,24 @@ private fun TodayLyricLiveCard(
 
                         IconButton(
                             onClick = {
-                                val lines = dailyLyric.text.trim().lines().map { it.trim() }.filter { it.isNotBlank() }
-                                val storyBitmap = com.widgy.lyrics.ui.share.ShareCardHelper.generateStoryCard(
-                                    context = context,
-                                    config = themeConfig,
-                                    lines = lines,
-                                    songTitle = dailyLyric.songTitle,
-                                    artistName = dailyLyric.artistName,
-                                    albumArtBitmap = albumArtBitmap,
-                                    isStoryFormat = true
-                                )
-                                com.widgy.lyrics.ui.share.ShareCardHelper.shareLyricCard(
-                                    context = context,
-                                    bitmap = storyBitmap,
-                                    songTitle = dailyLyric.songTitle,
-                                    artistName = dailyLyric.artistName
-                                )
+                                scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                                    val lines = dailyLyric.text.trim().lines().map { it.trim() }.filter { it.isNotBlank() }
+                                    val storyBitmap = com.widgy.lyrics.ui.share.ShareCardHelper.generateStoryCard(
+                                        context = context,
+                                        config = themeConfig,
+                                        lines = lines,
+                                        songTitle = dailyLyric.songTitle,
+                                        artistName = dailyLyric.artistName,
+                                        albumArtBitmap = albumArtBitmap,
+                                        isStoryFormat = true
+                                    )
+                                    com.widgy.lyrics.ui.share.ShareCardHelper.shareLyricCard(
+                                        context = context,
+                                        bitmap = storyBitmap,
+                                        songTitle = dailyLyric.songTitle,
+                                        artistName = dailyLyric.artistName
+                                    )
+                                }
                             }
                         ) {
                             Icon(

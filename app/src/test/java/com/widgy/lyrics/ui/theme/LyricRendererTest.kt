@@ -187,4 +187,45 @@ class LyricRendererTest {
         assertEquals(500, bitmap.width)
         assertEquals(350, bitmap.height)
     }
+
+    @Test
+    fun render_capPixels_limitsTotalPixelsForRemoteViewsSafety() {
+        val lines = listOf("High resolution render")
+        val config = ThemeConfig(
+            themeId = ThemeSpecs.AMBER.id,
+            typeface = ThemeTypeface.SANS,
+            sizeMode = ThemeSizeMode.AUTO,
+            creditMode = ThemeCreditMode.SONG_AND_ARTIST
+        )
+
+        val cappedBitmap = LyricRenderer.render(
+            context = context,
+            config = config,
+            lines = lines,
+            songTitle = "Title",
+            artistName = "Artist",
+            widthPx = 2000,
+            heightPx = 2000,
+            capPixels = true
+        )
+        assertNotNull(cappedBitmap)
+        assertTrue(
+            "Capped bitmap must have <= 500,000 pixels, was ${cappedBitmap.width * cappedBitmap.height}",
+            cappedBitmap.width.toLong() * cappedBitmap.height.toLong() <= 500_000L
+        )
+
+        val uncappedBitmap = LyricRenderer.render(
+            context = context,
+            config = config,
+            lines = lines,
+            songTitle = "Title",
+            artistName = "Artist",
+            widthPx = 2000,
+            heightPx = 2000,
+            capPixels = false
+        )
+        assertNotNull(uncappedBitmap)
+        assertEquals(2000, uncappedBitmap.width)
+        assertEquals(2000, uncappedBitmap.height)
+    }
 }

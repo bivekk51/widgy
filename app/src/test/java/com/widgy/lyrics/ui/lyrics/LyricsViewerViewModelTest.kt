@@ -97,6 +97,25 @@ class LyricsViewerViewModelTest {
     }
 
     @Test
+    fun updateManualMetadata_doesNotResetSnippetOrSelection() = runTest(testDispatcher) {
+        viewModel.initManualEntry()
+        viewModel.updateManualLyrics("Line one\nLine two")
+        viewModel.toggleLineSelection(0)
+        viewModel.openSnippetEditor()
+        viewModel.updateSnippetEditDraft("Line one edited")
+        viewModel.confirmSnippetEdit()
+
+        assertEquals("Line one edited", viewModel.uiState.value.customSnippetOverride)
+        assertEquals(setOf(0), viewModel.uiState.value.selectedLineIndices)
+
+        viewModel.updateManualMetadata("New Title", "New Artist")
+        assertEquals("New Title", viewModel.uiState.value.title)
+        assertEquals("New Artist", viewModel.uiState.value.artist)
+        assertEquals("Line one edited", viewModel.uiState.value.customSnippetOverride)
+        assertEquals(setOf(0), viewModel.uiState.value.selectedLineIndices)
+    }
+
+    @Test
     fun snippetEditing_customSnippetOverridesSelection() = runTest(testDispatcher) {
         viewModel.initManualEntry()
         viewModel.updateManualFields("Song", "Artist", "Line one\nLine two")

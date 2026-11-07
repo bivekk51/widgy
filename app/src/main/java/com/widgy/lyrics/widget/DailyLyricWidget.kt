@@ -46,8 +46,8 @@ class DailyLyricWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val db = AppDatabase.getDatabase(context)
-        val repository = LyricsRepository(db)
         val prefs = WidgetPreferences(context)
+        val repository = LyricsRepository(db, pinnedLyricProvider = { prefs.getPinnedLyric() })
         val pinned = prefs.getPinnedLyric()
         val cached = prefs.getCachedLyric()
         val intervalHours = prefs.getRotationIntervalHours()
@@ -175,8 +175,8 @@ class RefreshLyricActionCallback : ActionCallback {
         parameters: ActionParameters
     ) {
         val db = AppDatabase.getDatabase(context)
-        val repository = LyricsRepository(db)
         val prefs = WidgetPreferences(context)
+        val repository = LyricsRepository(db, pinnedLyricProvider = { prefs.getPinnedLyric() })
         val intervalHours = prefs.getRotationIntervalHours()
         val newLyric = repository.refreshTodayLyric(intervalHours = intervalHours)
         if (newLyric != null) {

@@ -29,7 +29,11 @@ class ArtworkManager(
     ): Bitmap? = withContext(Dispatchers.IO) {
         val file = getLocalArtFile(songId)
         if (file.exists() && file.length() > 0) {
-            return@withContext decodeSampledBitmap(file.absolutePath, maxDimension)
+            val cached = decodeSampledBitmap(file.absolutePath, maxDimension)
+            if (cached != null) {
+                return@withContext cached
+            }
+            file.delete()
         }
 
         val urlResult = client.fetchArtworkUrl(title, artist)
@@ -42,13 +46,21 @@ class ArtworkManager(
             FileOutputStream(file).use { it.write(bytes) }
         }
 
-        decodeSampledBitmap(file.absolutePath, maxDimension)
+        val decoded = decodeSampledBitmap(file.absolutePath, maxDimension)
+        if (decoded == null && file.exists()) {
+            file.delete()
+        }
+        decoded
     }
 
     fun loadCachedArtworkBitmap(songId: Long, maxDimension: Int = 300): Bitmap? {
         val file = getLocalArtFile(songId)
         if (!file.exists() || file.length() == 0L) return null
-        return decodeSampledBitmap(file.absolutePath, maxDimension)
+        val decoded = decodeSampledBitmap(file.absolutePath, maxDimension)
+        if (decoded == null && file.exists()) {
+            file.delete()
+        }
+        return decoded
     }
 
     companion object {

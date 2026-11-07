@@ -29,4 +29,12 @@ class StackBlurTest {
         val blurred = StackBlur.blur(src, 0)
         assertEquals(src, blurred)
     }
+
+    @Test
+    fun blurBitmap_recycledBitmap_returnsOriginalBitmap() {
+        val src = Bitmap.createBitmap(10, 10, Bitmap.Config.ARGB_8888)
+        src.recycle()
+        val blurred = StackBlur.blur(src, 5)
+        assertEquals(src, blurred)
+    }
 }

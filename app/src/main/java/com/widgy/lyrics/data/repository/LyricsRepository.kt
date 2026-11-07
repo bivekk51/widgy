@@ -15,10 +15,12 @@ import java.time.LocalDate
 class LyricsRepository(
     private val db: AppDatabase,
     private val client: LrcLibClient = LrcLibClient(),
+    pinnedLyricProvider: (() -> DailyLyric?)? = null,
     private val rotationEngine: DailyRotationEngine = DailyRotationEngine(
         db.songDao(),
         db.snippetDao(),
-        db.dailyHistoryDao()
+        db.dailyHistoryDao(),
+        pinnedLyricProvider = pinnedLyricProvider
     )
 ) {
     suspend fun searchOnline(query: String): Result<List<LrcTrackDto>> {

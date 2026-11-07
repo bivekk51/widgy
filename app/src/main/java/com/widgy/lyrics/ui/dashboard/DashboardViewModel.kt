@@ -54,12 +54,14 @@ class DashboardViewModel(
     fun loadTodayLyric(context: Context? = null) {
         viewModelScope.launch {
             val prefs = context?.let { WidgetPreferences(it) }
+            val interval = prefs?.getRotationIntervalHours() ?: _uiState.value.rotationIntervalHours
             val pinned = prefs?.getPinnedLyric()
-            val lyric = pinned ?: repository.getTodayDailyLyric()
+            val lyric = pinned ?: repository.getTodayDailyLyric(intervalHours = interval)
             _uiState.update {
                 it.copy(
                     todayLyric = lyric,
-                    isLyricPinned = prefs?.isLyricPinned() ?: false
+                    isLyricPinned = prefs?.isLyricPinned() ?: false,
+                    rotationIntervalHours = interval
                 )
             }
         }
@@ -104,7 +106,8 @@ class DashboardViewModel(
     fun refreshTodayLyric(context: Context? = null) {
         _uiState.update { it.copy(isRefreshingLyric = true) }
         viewModelScope.launch {
-            val newLyric = repository.refreshTodayLyric()
+            val interval = _uiState.value.rotationIntervalHours
+            val newLyric = repository.refreshTodayLyric(intervalHours = interval)
             _uiState.update { it.copy(todayLyric = newLyric, isRefreshingLyric = false) }
             context?.let { WidgetUpdateManager.updateAllWidgets(it) }
         }

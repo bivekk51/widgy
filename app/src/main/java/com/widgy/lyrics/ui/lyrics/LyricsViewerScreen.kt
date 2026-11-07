@@ -224,7 +224,7 @@ fun LyricsViewerScreen(
                                         OutlinedTextField(
                                             value = state.title,
                                             onValueChange = { newTitle ->
-                                                viewModel.updateManualFields(newTitle, state.artist, state.rawLyrics)
+                                                viewModel.updateManualMetadata(newTitle, state.artist)
                                             },
                                             label = { Text("Song Title *") },
                                             modifier = Modifier.fillMaxWidth(),
@@ -234,7 +234,7 @@ fun LyricsViewerScreen(
                                         OutlinedTextField(
                                             value = state.artist,
                                             onValueChange = { newArtist ->
-                                                viewModel.updateManualFields(state.title, newArtist, state.rawLyrics)
+                                                viewModel.updateManualMetadata(state.title, newArtist)
                                             },
                                             label = { Text("Artist Name *") },
                                             modifier = Modifier.fillMaxWidth(),
@@ -244,7 +244,7 @@ fun LyricsViewerScreen(
                                         OutlinedTextField(
                                             value = state.rawLyrics,
                                             onValueChange = { newLyrics ->
-                                                viewModel.updateManualFields(state.title, state.artist, newLyrics)
+                                                viewModel.updateManualLyrics(newLyrics)
                                             },
                                             label = { Text("Song Lyrics (Type or Paste)") },
                                             placeholder = { Text("Paste song lyrics or type individual lines...") },
@@ -316,7 +316,7 @@ fun LyricsViewerScreen(
                                 )
                             }
                         }
-                        items(state.lines) { line ->
+                        items(state.lines, key = { it.index }) { line ->
                             val isSelected = state.selectedLineIndices.contains(line.index)
                             LyricLineRow(
                                 line = line,

@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.sp
 import com.widgy.lyrics.data.db.DailyHistoryEntity
 import com.widgy.lyrics.data.preferences.WidgetPreferences
 import com.widgy.lyrics.ui.share.ShareCardHelper
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,6 +57,7 @@ fun ScrapbookScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         viewModel.syncPinnedState(context)
@@ -123,23 +125,25 @@ fun ScrapbookScreen(
                             isPinned = isPinned,
                             onTogglePin = { viewModel.pinHistoryLyric(context, item) },
                             onShare = {
-                                val prefs = WidgetPreferences(context)
-                                val themeConfig = prefs.getThemeConfig()
-                                val lines = item.lyricText.lines().map { it.trim() }.filter { it.isNotBlank() }
-                                val bitmap = ShareCardHelper.generateStoryCard(
-                                    context = context,
-                                    config = themeConfig,
-                                    lines = lines,
-                                    songTitle = item.songTitle,
-                                    artistName = item.artistName,
-                                    isStoryFormat = true
-                                )
-                                ShareCardHelper.shareLyricCard(
-                                    context = context,
-                                    bitmap = bitmap,
-                                    songTitle = item.songTitle,
-                                    artistName = item.artistName
-                                )
+                                scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                                    val prefs = WidgetPreferences(context)
+                                    val themeConfig = prefs.getThemeConfig()
+                                    val lines = item.lyricText.lines().map { it.trim() }.filter { it.isNotBlank() }
+                                    val bitmap = ShareCardHelper.generateStoryCard(
+                                        context = context,
+                                        config = themeConfig,
+                                        lines = lines,
+                                        songTitle = item.songTitle,
+                                        artistName = item.artistName,
+                                        isStoryFormat = true
+                                    )
+                                    ShareCardHelper.shareLyricCard(
+                                        context = context,
+                                        bitmap = bitmap,
+                                        songTitle = item.songTitle,
+                                        artistName = item.artistName
+                                    )
+                                }
                             }
                         )
                     }
@@ -160,6 +164,19 @@ private fun ScrapbookCard(
     onTogglePin: () -> Unit,
     onShare: () -> Unit
 ) {
+    val displayDate = androidx.compose.runtime.remember(entity.updatedAt, entity.date) {
+        if (entity.updatedAt > 0L) {
+            runCatching {
+                val instant = java.time.Instant.ofEpochMilli(entity.updatedAt)
+                val formatter = java.time.format.DateTimeFormatter.ofPattern("MMM d, yyyy · h:mm a")
+                    .withZone(java.time.ZoneId.systemDefault())
+                formatter.format(instant)
+            }.getOrNull() ?: entity.date.substringBefore("_")
+        } else {
+            entity.date.substringBefore("_")
+        }
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -178,7 +195,7 @@ private fun ScrapbookCard(
                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
                 ) {
                     Text(
-                        text = entity.date,
+                        text = displayDate,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.primary,

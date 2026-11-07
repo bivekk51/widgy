@@ -40,7 +40,8 @@ class MainActivity : ComponentActivity() {
         WidgetUpdateManager.scheduleDailyRotation(this)
 
         val db = AppDatabase.getDatabase(this)
-        val repository = LyricsRepository(db)
+        val prefs = com.widgy.lyrics.data.preferences.WidgetPreferences(this)
+        val repository = LyricsRepository(db, pinnedLyricProvider = { prefs.getPinnedLyric() })
 
         extractSongFromIntent(intent)
 
