@@ -233,7 +233,7 @@ private fun ScrapbookCard(
             Spacer(modifier = Modifier.height(10.dp))
 
             Text(
-                text = "\u201c${entity.lyricText}\u201d",
+                text = entity.lyricText,
                 fontFamily = FontFamily.Serif,
                 fontSize = 16.sp,
                 lineHeight = 22.sp,
@@ -244,7 +244,7 @@ private fun ScrapbookCard(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "— ${entity.songTitle} · ${entity.artistName}",
+                text = "${entity.songTitle} · ${entity.artistName}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

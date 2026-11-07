@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -355,12 +356,13 @@ private fun TodayLyricLiveCard(
                     verticalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = "\u201cNo lyrics in rotation yet\u201d",
+                        text = "No lyrics in rotation yet",
                         color = Color(0xFF8E8E93),
-                        fontSize = 17.sp,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium,
                         textAlign = TextAlign.Center
                     )
-                    Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "Tap + below to add your first song",
                         color = Color(0xFF636366),
@@ -370,48 +372,44 @@ private fun TodayLyricLiveCard(
                 }
             }
 
-            // Top-Left: Locked Badge
-            if (isPinned) {
-                Box(
-                    modifier = Modifier
-                        .padding(12.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Color(0xCC000000))
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.Lock,
-                            contentDescription = null,
-                            tint = Color(0xFFFFB454),
-                            modifier = Modifier.size(12.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = "Locked",
-                            color = Color(0xFFFFB454),
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
+            // Contrast-safe action buttons top-right (Lock, Share, Shuffle)
+            val isCardLight = remember(themeConfig.themeSpec.backgroundColor, themeConfig.useAlbumArtBackdrop) {
+                if (themeConfig.useAlbumArtBackdrop) {
+                    false
+                } else {
+                    val bg = themeConfig.themeSpec.backgroundColor
+                    val r = android.graphics.Color.red(bg)
+                    val g = android.graphics.Color.green(bg)
+                    val b = android.graphics.Color.blue(bg)
+                    (0.299 * r + 0.587 * g + 0.114 * b) / 255.0 > 0.6
                 }
             }
+            val cardActionTint = if (isCardLight) Color(0xFF1C1A17) else Color.White
+            val cardActionButtonBg = if (isCardLight) Color(0x1F000000) else Color(0x33000000)
 
-            // Action buttons top-right (Lock, Share, Shuffle)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(8.dp),
                 contentAlignment = Alignment.TopEnd
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
                     if (dailyLyric != null) {
-                        IconButton(onClick = onTogglePin) {
+                        IconButton(
+                            onClick = onTogglePin,
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(cardActionButtonBg)
+                        ) {
                             Icon(
                                 imageVector = if (isPinned) Icons.Default.Lock else Icons.Default.LockOpen,
                                 contentDescription = if (isPinned) "Unlock rotation" else "Lock lyric on widget",
-                                tint = if (isPinned) Color(0xFFFFB454) else Color(0xCCFFFFFF)
+                                tint = if (isPinned) Color(0xFFFFB454) else cardActionTint,
+                                modifier = Modifier.size(18.dp)
                             )
                         }
 
@@ -435,28 +433,48 @@ private fun TodayLyricLiveCard(
                                         artistName = dailyLyric.artistName
                                     )
                                 }
-                            }
+                            },
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(cardActionButtonBg)
                         ) {
                             Icon(
                                 Icons.Default.Share,
                                 contentDescription = "Share Story Card",
-                                tint = Color(0xCCFFFFFF)
+                                tint = cardActionTint,
+                                modifier = Modifier.size(18.dp)
                             )
                         }
                     }
 
                     if (isRefreshing) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.padding(8.dp).size(20.dp),
-                            color = Color.White,
-                            strokeWidth = 2.dp
-                        )
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(cardActionButtonBg),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                color = cardActionTint,
+                                strokeWidth = 2.dp
+                            )
+                        }
                     } else {
-                        IconButton(onClick = onRefreshClick) {
+                        IconButton(
+                            onClick = onRefreshClick,
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(cardActionButtonBg)
+                        ) {
                             Icon(
                                 Icons.Default.Refresh,
                                 contentDescription = "Shuffle Lyric",
-                                tint = Color(0xCCFFFFFF)
+                                tint = cardActionTint,
+                                modifier = Modifier.size(18.dp)
                             )
                         }
                     }
@@ -556,8 +574,8 @@ private fun SongCurationCard(
 
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "View & pick lines →",
-                        fontSize = 12.sp,
+                        text = "Select lines",
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier

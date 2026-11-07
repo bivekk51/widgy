@@ -344,7 +344,24 @@ object LyricRenderer {
         val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         val density = effectiveDensity
-        val spec = config.themeSpec
+        val baseSpec = config.themeSpec
+
+        // Compute effective foreground color: over dark 58% blurred backdrop scrim,
+        // dark foregrounds (e.g. Classic #3A2A14) must flip to high-contrast warm white to meet WCAG AA
+        val effectiveForegroundColor = if (config.useAlbumArtBackdrop && albumArtBitmap != null && !albumArtBitmap.isRecycled) {
+            val r = AndroidColor.red(baseSpec.foregroundColor)
+            val g = AndroidColor.green(baseSpec.foregroundColor)
+            val b = AndroidColor.blue(baseSpec.foregroundColor)
+            val luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255.0
+            if (luminance < 0.45) 0xFFF5EFEB.toInt() else baseSpec.foregroundColor
+        } else {
+            baseSpec.foregroundColor
+        }
+        val spec = if (effectiveForegroundColor != baseSpec.foregroundColor) {
+            baseSpec.copy(foregroundColor = effectiveForegroundColor)
+        } else {
+            baseSpec
+        }
 
         // 1. Draw edge-to-edge background (either blurred album art with dark scrim or solid theme color)
         if (config.useAlbumArtBackdrop && albumArtBitmap != null && !albumArtBitmap.isRecycled) {
@@ -391,8 +408,8 @@ object LyricRenderer {
         if (hasFooter) {
             val creditText = when (config.creditMode) {
                 ThemeCreditMode.NONE -> null
-                ThemeCreditMode.ARTIST -> "— $artistName"
-                ThemeCreditMode.SONG_AND_ARTIST -> if (songTitle.isNotBlank()) "— $songTitle · $artistName" else "— $artistName"
+                ThemeCreditMode.ARTIST -> artistName
+                ThemeCreditMode.SONG_AND_ARTIST -> if (songTitle.isNotBlank()) "$songTitle · $artistName" else artistName
             }
 
             if (!creditText.isNullOrBlank()) {
@@ -400,7 +417,7 @@ object LyricRenderer {
                 val footerDevanagariTf = cachedSansMedium ?: Typeface.SANS_SERIF
                 val footerPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
                     color = spec.foregroundColor
-                    alpha = (255 * 0.65f).roundToInt()
+                    alpha = (255 * 0.70f).roundToInt()
                     textSize = 12f * density
                     typeface = footerLatinTf
                 }

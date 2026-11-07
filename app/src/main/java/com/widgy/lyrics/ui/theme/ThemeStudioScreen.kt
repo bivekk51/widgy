@@ -223,6 +223,20 @@ fun ThemeStudioScreen(
                 }
             }
 
+            val isStageLight = remember(config.themeSpec.backgroundColor, config.useAlbumArtBackdrop) {
+                if (config.useAlbumArtBackdrop) {
+                    false
+                } else {
+                    val bg = config.themeSpec.backgroundColor
+                    val r = android.graphics.Color.red(bg)
+                    val g = android.graphics.Color.green(bg)
+                    val b = android.graphics.Color.blue(bg)
+                    (0.299 * r + 0.587 * g + 0.114 * b) / 255.0 > 0.6
+                }
+            }
+            val stageContentColor = if (isStageLight) Color(0xFF1C1A17) else Color.White
+            val stageButtonBg = if (isStageLight) Color(0x1F000000) else Color(0x2EFFFFFF)
+
             // Top Overlay Row (12dp padding): Back, Title, Refresh
             Row(
                 modifier = Modifier
@@ -232,46 +246,46 @@ fun ThemeStudioScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                // Circular back button (40dp, 18% gray fill)
+                // Circular back button (48dp accessible touch target)
                 IconButton(
                     onClick = onBack,
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(48.dp)
                         .clip(CircleShape)
-                        .background(Color(0x2EFFFFFF))
+                        .background(stageButtonBg)
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back",
-                        tint = Color.White,
+                        tint = stageContentColor,
                         modifier = Modifier.size(20.dp)
                     )
                 }
 
-                // Title "Theme studio"
+                // Title "Theme Studio"
                 Text(
-                    text = "Theme studio",
-                    color = Color.White,
+                    text = "Theme Studio",
+                    color = stageContentColor,
                     fontSize = 17.sp,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center
                 )
 
-                // Circular refresh button (40dp, 18% gray fill)
+                // Circular refresh button (48dp accessible touch target)
                 IconButton(
                     onClick = {
                         currentLyricIndex = (currentLyricIndex + 1) % SAMPLE_LYRICS_POOL.size
                         customLinesText = SAMPLE_LYRICS_POOL[currentLyricIndex].joinToString("\n")
                     },
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(48.dp)
                         .clip(CircleShape)
-                        .background(Color(0x2EFFFFFF))
+                        .background(stageButtonBg)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Refresh,
                         contentDescription = "Random lyric",
-                        tint = Color.White,
+                        tint = stageContentColor,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -293,7 +307,7 @@ fun ThemeStudioScreen(
                     shadowElevation = 8.dp
                 ) {
                     Text(
-                        text = "✓  Widget updated",
+                        text = "Widget updated",
                         color = Color(0xFFFFB454),
                         fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold,
@@ -492,7 +506,7 @@ fun ThemeStudioScreen(
                         ) {
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 PillChip(
-                                    text = "Show ↻",
+                                    text = "Visible",
                                     isSelected = config.showRefreshButton,
                                     colors = colors,
                                     onClick = { update(config.copy(showRefreshButton = true)) }

@@ -6,10 +6,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -349,12 +351,22 @@ private fun LyricLineRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .defaultMinSize(minHeight = 48.dp)
             .clip(RoundedCornerShape(8.dp))
             .background(bg)
             .clickable { onClick() }
             .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        if (line.isHook) {
+            Box(
+                modifier = Modifier
+                    .padding(end = 10.dp)
+                    .size(width = 3.dp, height = 22.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.85f))
+            )
+        }
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = line.text,
@@ -363,21 +375,14 @@ private fun LyricLineRow(
                 fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal,
                 color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
             )
-            if (line.isHook) {
-                Text(
-                    text = "HOOK",
-                    fontSize = 9.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
         }
 
         if (isSelected) {
             Icon(
                 Icons.Default.Check,
                 contentDescription = "Selected",
-                tint = MaterialTheme.colorScheme.primary
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp)
             )
         }
     }

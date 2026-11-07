@@ -128,7 +128,7 @@ private fun WidgetContent(
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
-            .cornerRadius(22.dp)
+            .cornerRadius(28.dp)
             .clickable(actionStartActivity(clickIntent)),
         contentAlignment = Alignment.Center
     ) {
@@ -148,19 +148,16 @@ private fun WidgetContent(
                 Box(
                     modifier = GlanceModifier
                         .padding(8.dp)
-                        .size(40.dp)
-                        .cornerRadius(20.dp)
+                        .size(44.dp)
+                        .cornerRadius(22.dp)
                         .background(ColorProvider(Color(0x33000000)))
                         .clickable(actionRunCallback<RefreshLyricActionCallback>()),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "↻",
-                        style = TextStyle(
-                            color = ColorProvider(Color(0xE6FFFFFF)),
-                            fontSize = 17.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                    Image(
+                        provider = ImageProvider(com.widgy.lyrics.R.drawable.ic_widget_refresh),
+                        contentDescription = "Shuffle Lyric",
+                        modifier = GlanceModifier.size(18.dp)
                     )
                 }
             }
