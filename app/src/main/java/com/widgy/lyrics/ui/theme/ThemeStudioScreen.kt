@@ -43,6 +43,8 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -78,6 +80,7 @@ import com.widgy.lyrics.domain.theme.ThemeSpecs
 import com.widgy.lyrics.domain.theme.ThemeTypeface
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 data class ThemeStudioColors(
     val dockBg: Color,
@@ -155,6 +158,7 @@ fun ThemeStudioScreen(
     val activeArtist = dailyLyric?.artistName ?: "Pariwartan"
 
     val artworkManager = remember { ArtworkManager(context) }
+    var rawArtworkBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var albumArtBitmap by remember { mutableStateOf<Bitmap?>(null) }
 
     LaunchedEffect(dailyLyric?.songId, config.useAlbumArtBackdrop) {
@@ -168,7 +172,21 @@ fun ThemeStudioScreen(
                     maxDimension = 200
                 )
             }
-            albumArtBitmap = if (art != null) StackBlur.blur(art, 22) else null
+            rawArtworkBitmap = art
+        } else {
+            rawArtworkBitmap = null
+            albumArtBitmap = null
+        }
+    }
+
+    LaunchedEffect(rawArtworkBitmap, config.useAlbumArtBackdrop, config.blurRadius) {
+        val art = rawArtworkBitmap
+        if (config.useAlbumArtBackdrop && art != null) {
+            delay(16) // 1 frame debounce for silky 60fps slider drag
+            val blurred = withContext(Dispatchers.Default) {
+                StackBlur.blur(art, config.blurRadius)
+            }
+            albumArtBitmap = blurred
         } else {
             albumArtBitmap = null
         }
@@ -497,6 +515,72 @@ fun ThemeStudioScreen(
                                     colors = colors,
                                     onClick = { update(config.copy(useAlbumArtBackdrop = true)) }
                                 )
+                            }
+                        }
+
+                        // Row 4b: Blur Range & Presets (Visible only when Blurred Art is enabled)
+                        AnimatedVisibility(visible = config.useAlbumArtBackdrop) {
+                            ConfigRow(
+                                label = "Blur",
+                                colors = colors
+                            ) {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    // Range scroll (horizontal slider + px badge)
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Slider(
+                                            value = config.blurRadius.toFloat(),
+                                            onValueChange = { newRadius ->
+                                                update(config.copy(blurRadius = newRadius.roundToInt()))
+                                            },
+                                            valueRange = ThemeConfig.MIN_BLUR_RADIUS.toFloat()..ThemeConfig.MAX_BLUR_RADIUS.toFloat(),
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .height(28.dp),
+                                            colors = SliderDefaults.colors(
+                                                thumbColor = colors.accent,
+                                                activeTrackColor = colors.accent,
+                                                inactiveTrackColor = colors.chipBg
+                                            )
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = "${config.blurRadius}px",
+                                            color = colors.textSecondary,
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            modifier = Modifier.width(36.dp),
+                                            textAlign = TextAlign.End
+                                        )
+                                    }
+
+                                    // Quick preset chips below: Soft (10), Medium (22), Deep (36)
+                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        PillChip(
+                                            text = "Soft (10)",
+                                            isSelected = config.blurRadius == ThemeConfig.BLUR_SOFT,
+                                            colors = colors,
+                                            onClick = { update(config.copy(blurRadius = ThemeConfig.BLUR_SOFT)) }
+                                        )
+                                        PillChip(
+                                            text = "Medium (22)",
+                                            isSelected = config.blurRadius == ThemeConfig.BLUR_MEDIUM,
+                                            colors = colors,
+                                            onClick = { update(config.copy(blurRadius = ThemeConfig.BLUR_MEDIUM)) }
+                                        )
+                                        PillChip(
+                                            text = "Deep (36)",
+                                            isSelected = config.blurRadius == ThemeConfig.BLUR_DEEP,
+                                            colors = colors,
+                                            onClick = { update(config.copy(blurRadius = ThemeConfig.BLUR_DEEP)) }
+                                        )
+                                    }
+                                }
                             }
                         }
 
