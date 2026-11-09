@@ -26,6 +26,8 @@ import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.padding
 import androidx.glance.layout.size
 import androidx.glance.state.GlanceStateDefinition
+import androidx.glance.state.PreferencesGlanceStateDefinition
+import androidx.glance.currentState
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
@@ -41,7 +43,7 @@ import kotlin.math.max
 
 class DailyLyricWidget : GlanceAppWidget() {
 
-    override val stateDefinition: GlanceStateDefinition<*>? = null
+    override val stateDefinition: GlanceStateDefinition<*> = PreferencesGlanceStateDefinition
     override val sizeMode: SizeMode = SizeMode.Exact
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
@@ -51,7 +53,7 @@ class DailyLyricWidget : GlanceAppWidget() {
         val pinned = prefs.getPinnedLyric()
         val cached = prefs.getCachedLyric()
         val intervalHours = prefs.getRotationIntervalHours()
-        val dailyLyric = pinned ?: repository.getTodayDailyLyric(intervalHours = intervalHours) ?: cached?.let {
+        val initialLyric = pinned ?: repository.getTodayDailyLyric(intervalHours = intervalHours) ?: cached?.let {
             DailyLyric(
                 date = "",
                 songId = it.songId,
@@ -61,14 +63,41 @@ class DailyLyricWidget : GlanceAppWidget() {
                 artistName = it.artistName
             )
         }
-        if (dailyLyric != null) {
-            prefs.saveCachedLyric(dailyLyric)
+        if (initialLyric != null) {
+            prefs.saveCachedLyric(initialLyric)
         }
-        val themeConfig = prefs.getThemeConfig()
 
         provideContent {
+            val glancePrefs = currentState<androidx.datastore.preferences.core.Preferences>()
+            val updateTimestamp = glancePrefs[WidgetUpdateManager.UPDATE_TIMESTAMP_KEY] ?: 0L
+
+            // Reactively re-read latest user configurations and cached lyrics whenever state updates
+            val currentContext = androidx.glance.LocalContext.current
+            val currentPrefs = androidx.compose.runtime.remember(updateTimestamp) {
+                WidgetPreferences(currentContext)
+            }
+            val themeConfig = androidx.compose.runtime.remember(updateTimestamp) {
+                currentPrefs.getThemeConfig()
+            }
+            val pinnedLyric = androidx.compose.runtime.remember(updateTimestamp) {
+                currentPrefs.getPinnedLyric()
+            }
+            val cachedLyric = androidx.compose.runtime.remember(updateTimestamp) {
+                currentPrefs.getCachedLyric()
+            }
+            val dailyLyric = pinnedLyric ?: cachedLyric?.let {
+                DailyLyric(
+                    date = "",
+                    songId = it.songId,
+                    snippetId = null,
+                    text = it.text,
+                    songTitle = it.songTitle,
+                    artistName = it.artistName
+                )
+            } ?: initialLyric
+
             WidgetContent(
-                context = context,
+                context = currentContext,
                 dailyLyric = dailyLyric,
                 themeConfig = themeConfig
             )

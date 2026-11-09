@@ -109,7 +109,12 @@ class DashboardViewModel(
             val interval = _uiState.value.rotationIntervalHours
             val newLyric = repository.refreshTodayLyric(intervalHours = interval)
             _uiState.update { it.copy(todayLyric = newLyric, isRefreshingLyric = false) }
-            context?.let { WidgetUpdateManager.updateAllWidgets(it) }
+            context?.let {
+                if (newLyric != null) {
+                    WidgetPreferences(it).saveCachedLyric(newLyric)
+                }
+                WidgetUpdateManager.updateAllWidgets(it)
+            }
         }
     }
 
