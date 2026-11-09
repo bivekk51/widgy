@@ -131,6 +131,7 @@ class WidgetPreferences(context: Context) {
         val useAlbumArt = prefs.getBoolean("theme_use_album_art", false)
         val showRefresh = prefs.getBoolean("theme_show_refresh_btn", true)
         val blurRadius = prefs.getInt("theme_blur_radius", ThemeConfig.DEFAULT_BLUR_RADIUS)
+            .coerceIn(ThemeConfig.MIN_BLUR_RADIUS, ThemeConfig.MAX_BLUR_RADIUS)
 
         if (themeId != null) {
             val typefaceStr = prefs.getString("theme_typeface", ThemeTypeface.SANS.name) ?: ThemeTypeface.SANS.name

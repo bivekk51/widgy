@@ -115,4 +115,24 @@ class WidgetPreferencesTest {
 
         assertEquals(10, loaded.blurRadius)
     }
+
+    @Test
+    fun getThemeConfig_outOfBoundsRadius_clampsToSafeRange() {
+        every { prefs.getInt("theme_blur_radius", 22) } returns 99
+
+        val widgetPrefs = WidgetPreferences(context)
+        val loaded = widgetPrefs.getThemeConfig()
+
+        assertEquals(com.widgy.lyrics.domain.theme.ThemeConfig.MAX_BLUR_RADIUS, loaded.blurRadius)
+    }
+
+    @Test
+    fun getThemeConfig_tooSmallRadius_clampsToMinRange() {
+        every { prefs.getInt("theme_blur_radius", 22) } returns 1
+
+        val widgetPrefs = WidgetPreferences(context)
+        val loaded = widgetPrefs.getThemeConfig()
+
+        assertEquals(com.widgy.lyrics.domain.theme.ThemeConfig.MIN_BLUR_RADIUS, loaded.blurRadius)
+    }
 }

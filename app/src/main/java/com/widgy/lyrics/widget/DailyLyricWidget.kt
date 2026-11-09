@@ -102,12 +102,14 @@ private fun WidgetContent(
     val artistName = dailyLyric?.artistName ?: ""
     val songId = dailyLyric?.songId ?: 0L
 
-    val albumArtBitmap = if (themeConfig.useAlbumArtBackdrop && songId > 0) {
-        com.widgy.lyrics.data.image.ArtworkManager(context)
-            .loadCachedArtworkBitmap(songId, maxDimension = 180)?.let {
-                com.widgy.lyrics.data.image.StackBlur.blur(it, themeConfig.blurRadius)
-            }
-    } else null
+    val albumArtBitmap = androidx.compose.runtime.remember(songId, themeConfig.useAlbumArtBackdrop, themeConfig.blurRadius) {
+        if (themeConfig.useAlbumArtBackdrop && songId > 0) {
+            com.widgy.lyrics.data.image.ArtworkManager(context)
+                .loadCachedArtworkBitmap(songId, maxDimension = 180)?.let {
+                    com.widgy.lyrics.data.image.StackBlur.blur(it, themeConfig.blurRadius)
+                }
+        } else null
+    }
 
     val isWide = size.width.value >= 260f
     val isCompactHeight = size.height.value <= 170f

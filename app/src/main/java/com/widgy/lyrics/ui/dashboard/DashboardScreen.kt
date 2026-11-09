@@ -289,7 +289,11 @@ private fun TodayLyricLiveCard(
                     maxDimension = 200
                 )
             }
-            albumArtBitmap = if (art != null) com.widgy.lyrics.data.image.StackBlur.blur(art, themeConfig.blurRadius) else null
+            albumArtBitmap = if (art != null) {
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+                    com.widgy.lyrics.data.image.StackBlur.blur(art, themeConfig.blurRadius)
+                }
+            } else null
         } else {
             albumArtBitmap = null
         }

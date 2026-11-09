@@ -216,7 +216,19 @@ fun ThemeStudioScreen(
                 val widthPx = (maxWidth.value * density).toInt()
                 val heightPx = (maxHeight.value * density).toInt()
 
-                val previewBitmap = remember(config, activeLines, activeTitle, activeArtist, widthPx, heightPx, albumArtBitmap) {
+                val previewBitmap = remember(
+                    config.themeId,
+                    config.typeface,
+                    config.sizeMode,
+                    config.creditMode,
+                    config.useAlbumArtBackdrop,
+                    activeLines,
+                    activeTitle,
+                    activeArtist,
+                    widthPx,
+                    heightPx,
+                    albumArtBitmap
+                ) {
                     if (widthPx > 50 && heightPx > 50) {
                         LyricRenderer.render(
                             context = context,
@@ -536,7 +548,13 @@ fun ThemeStudioScreen(
                                         Slider(
                                             value = config.blurRadius.toFloat(),
                                             onValueChange = { newRadius ->
-                                                update(config.copy(blurRadius = newRadius.roundToInt()))
+                                                val intRadius = newRadius.roundToInt().coerceIn(
+                                                    ThemeConfig.MIN_BLUR_RADIUS,
+                                                    ThemeConfig.MAX_BLUR_RADIUS
+                                                )
+                                                if (intRadius != config.blurRadius) {
+                                                    update(config.copy(blurRadius = intRadius))
+                                                }
                                             },
                                             valueRange = ThemeConfig.MIN_BLUR_RADIUS.toFloat()..ThemeConfig.MAX_BLUR_RADIUS.toFloat(),
                                             modifier = Modifier
