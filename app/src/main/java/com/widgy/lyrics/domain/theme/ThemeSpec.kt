@@ -209,7 +209,17 @@ data class ThemeConfig(
     val sizeMode: ThemeSizeMode = ThemeSizeMode.AUTO,
     val creditMode: ThemeCreditMode = ThemeCreditMode.NONE,
     val useAlbumArtBackdrop: Boolean = false,
+    val blurRadius: Int = DEFAULT_BLUR_RADIUS,
     val showRefreshButton: Boolean = true
 ) {
+    companion object {
+        const val DEFAULT_BLUR_RADIUS = 22
+        const val MIN_BLUR_RADIUS = 6
+        const val MAX_BLUR_RADIUS = 38
+        const val BLUR_SOFT = 10
+        const val BLUR_MEDIUM = 22
+        const val BLUR_DEEP = 36
+    }
+
     val themeSpec: ThemeSpec get() = ThemeSpecs.findById(themeId)
 }

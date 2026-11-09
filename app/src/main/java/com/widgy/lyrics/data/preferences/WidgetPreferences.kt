@@ -130,6 +130,7 @@ class WidgetPreferences(context: Context) {
         val themeId = prefs.getString("theme_id", null)
         val useAlbumArt = prefs.getBoolean("theme_use_album_art", false)
         val showRefresh = prefs.getBoolean("theme_show_refresh_btn", true)
+        val blurRadius = prefs.getInt("theme_blur_radius", ThemeConfig.DEFAULT_BLUR_RADIUS)
 
         if (themeId != null) {
             val typefaceStr = prefs.getString("theme_typeface", ThemeTypeface.SANS.name) ?: ThemeTypeface.SANS.name
@@ -141,6 +142,7 @@ class WidgetPreferences(context: Context) {
                 sizeMode = runCatching { ThemeSizeMode.valueOf(sizeModeStr) }.getOrDefault(ThemeSizeMode.AUTO),
                 creditMode = runCatching { ThemeCreditMode.valueOf(creditModeStr) }.getOrDefault(ThemeCreditMode.NONE),
                 useAlbumArtBackdrop = useAlbumArt,
+                blurRadius = blurRadius,
                 showRefreshButton = showRefresh
             )
         }
@@ -182,6 +184,7 @@ class WidgetPreferences(context: Context) {
                 sizeMode = mappedSize,
                 creditMode = mappedCredit,
                 useAlbumArtBackdrop = useAlbumArt,
+                blurRadius = blurRadius,
                 showRefreshButton = showRefresh
             )
         }
@@ -193,6 +196,7 @@ class WidgetPreferences(context: Context) {
             sizeMode = ThemeSizeMode.AUTO,
             creditMode = ThemeCreditMode.NONE,
             useAlbumArtBackdrop = useAlbumArt,
+            blurRadius = blurRadius,
             showRefreshButton = showRefresh
         )
     }
@@ -204,6 +208,7 @@ class WidgetPreferences(context: Context) {
             .putString("theme_size_mode", config.sizeMode.name)
             .putString("theme_credit_mode", config.creditMode.name)
             .putBoolean("theme_use_album_art", config.useAlbumArtBackdrop)
+            .putInt("theme_blur_radius", config.blurRadius)
             .putBoolean("theme_show_refresh_btn", config.showRefreshButton)
             // Also keep legacy keys in sync for backward compatibility
             .putString("template", config.themeId.uppercase())

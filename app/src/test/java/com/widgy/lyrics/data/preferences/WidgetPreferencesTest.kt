@@ -89,4 +89,30 @@ class WidgetPreferencesTest {
             editor.putBoolean("theme_show_refresh_btn", false)
         }
     }
+
+    @Test
+    fun saveThemeConfig_savesBlurRadius() {
+        val widgetPrefs = WidgetPreferences(context)
+        val config = com.widgy.lyrics.domain.theme.ThemeConfig(
+            themeId = "genius",
+            useAlbumArtBackdrop = true,
+            blurRadius = 36
+        )
+
+        widgetPrefs.saveThemeConfig(config)
+
+        verify {
+            editor.putInt("theme_blur_radius", 36)
+        }
+    }
+
+    @Test
+    fun getThemeConfig_readsStoredBlurRadius() {
+        every { prefs.getInt("theme_blur_radius", 22) } returns 10
+
+        val widgetPrefs = WidgetPreferences(context)
+        val loaded = widgetPrefs.getThemeConfig()
+
+        assertEquals(10, loaded.blurRadius)
+    }
 }
