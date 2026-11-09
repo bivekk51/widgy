@@ -2,6 +2,8 @@ name: Build & Release APK
 
 on:
   push:
+    branches:
+      - main
     tags:
       - 'v*'
   workflow_dispatch:
@@ -32,12 +34,11 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
-
-      - name: Run Unit Tests
-        run: ./gradlew testDebugUnitTest
 
       - name: Check Keystore Secret
         id: check_keystore
@@ -58,7 +59,7 @@ jobs:
           mkdir -p signing
           echo "$KEYSTORE_BASE64" | base64 -d > signing/widgy-release.jks
 
-      - name: Build Signed Release APK
+      - name: Test & Build Signed Release APK
         if: steps.check_keystore.outputs.has_keystore == 'true'
         env:
           KEYSTORE_FILE: signing/widgy-release.jks
@@ -67,14 +68,14 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           VERSION_CODE: ${{ github.run_number }}
           VERSION_NAME: ${{ github.ref_name }}
-        run: ./gradlew assembleRelease
+        run: ./gradlew testReleaseUnitTest assembleRelease
 
-      - name: Build Debug APK (Fallback)
+      - name: Test & Build Debug APK (Fallback)
         if: steps.check_keystore.outputs.has_keystore != 'true'
         env:
           VERSION_CODE: ${{ github.run_number }}
           VERSION_NAME: ${{ github.ref_name }}
-        run: ./gradlew assembleDebug
+        run: ./gradlew testDebugUnitTest assembleDebug
 
       - name: Prepare APK File
         run: |
