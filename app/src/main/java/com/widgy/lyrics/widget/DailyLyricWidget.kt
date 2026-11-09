@@ -105,7 +105,7 @@ private fun WidgetContent(
     val albumArtBitmap = if (themeConfig.useAlbumArtBackdrop && songId > 0) {
         com.widgy.lyrics.data.image.ArtworkManager(context)
             .loadCachedArtworkBitmap(songId, maxDimension = 180)?.let {
-                com.widgy.lyrics.data.image.StackBlur.blur(it, 20)
+                com.widgy.lyrics.data.image.StackBlur.blur(it, themeConfig.blurRadius)
             }
     } else null
 

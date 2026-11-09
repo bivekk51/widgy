@@ -279,7 +279,7 @@ private fun TodayLyricLiveCard(
     val artworkManager = remember { com.widgy.lyrics.data.image.ArtworkManager(context) }
     var albumArtBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
 
-    LaunchedEffect(dailyLyric?.songId, themeConfig.useAlbumArtBackdrop) {
+    LaunchedEffect(dailyLyric?.songId, themeConfig.useAlbumArtBackdrop, themeConfig.blurRadius) {
         if (themeConfig.useAlbumArtBackdrop && dailyLyric != null && dailyLyric.songId > 0) {
             val art = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                 artworkManager.getOrFetchArtworkBitmap(
@@ -289,7 +289,7 @@ private fun TodayLyricLiveCard(
                     maxDimension = 200
                 )
             }
-            albumArtBitmap = if (art != null) com.widgy.lyrics.data.image.StackBlur.blur(art, 22) else null
+            albumArtBitmap = if (art != null) com.widgy.lyrics.data.image.StackBlur.blur(art, themeConfig.blurRadius) else null
         } else {
             albumArtBitmap = null
         }
