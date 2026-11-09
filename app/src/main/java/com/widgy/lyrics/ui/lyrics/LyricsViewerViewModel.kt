@@ -252,7 +252,7 @@ class LyricsViewerViewModel(
                 existingSongId = state.localSongId
             )
             _uiState.update { it.copy(isSaved = true) }
-            context?.let { WidgetUpdateManager.updateAllWidgets(it) }
+            context?.let { WidgetUpdateManager.notifyWidgetUpdate(it) }
             onSuccess()
         }
     }
@@ -271,7 +271,7 @@ class LyricsViewerViewModel(
                 existingSongId = state.localSongId
             )
             _uiState.update { it.copy(isSaved = true) }
-            context?.let { WidgetUpdateManager.updateAllWidgets(it) }
+            context?.let { WidgetUpdateManager.notifyWidgetUpdate(it) }
             onSuccess()
         }
     }

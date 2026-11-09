@@ -73,33 +73,28 @@ class DailyLyricWidget : GlanceAppWidget() {
 
             // Reactively re-read latest user configurations and cached lyrics whenever state updates
             val currentContext = androidx.glance.LocalContext.current
-            val currentPrefs = androidx.compose.runtime.remember(updateTimestamp) {
-                WidgetPreferences(currentContext)
+            val (resolvedThemeConfig, resolvedDailyLyric) = androidx.compose.runtime.remember(updateTimestamp) {
+                val currentPrefs = WidgetPreferences(currentContext)
+                val theme = currentPrefs.getThemeConfig()
+                val pinned = currentPrefs.getPinnedLyric()
+                val cached = currentPrefs.getCachedLyric()
+                val lyric = pinned ?: cached?.let {
+                    DailyLyric(
+                        date = "",
+                        songId = it.songId,
+                        snippetId = null,
+                        text = it.text,
+                        songTitle = it.songTitle,
+                        artistName = it.artistName
+                    )
+                } ?: initialLyric
+                Pair(theme, lyric)
             }
-            val themeConfig = androidx.compose.runtime.remember(updateTimestamp) {
-                currentPrefs.getThemeConfig()
-            }
-            val pinnedLyric = androidx.compose.runtime.remember(updateTimestamp) {
-                currentPrefs.getPinnedLyric()
-            }
-            val cachedLyric = androidx.compose.runtime.remember(updateTimestamp) {
-                currentPrefs.getCachedLyric()
-            }
-            val dailyLyric = pinnedLyric ?: cachedLyric?.let {
-                DailyLyric(
-                    date = "",
-                    songId = it.songId,
-                    snippetId = null,
-                    text = it.text,
-                    songTitle = it.songTitle,
-                    artistName = it.artistName
-                )
-            } ?: initialLyric
 
             WidgetContent(
                 context = currentContext,
-                dailyLyric = dailyLyric,
-                themeConfig = themeConfig
+                dailyLyric = resolvedDailyLyric,
+                themeConfig = resolvedThemeConfig
             )
         }
     }

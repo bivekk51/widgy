@@ -62,8 +62,6 @@ class ScrapbookViewModel(
             _uiState.update { it.copy(pinnedLyricText = entity.lyricText) }
         }
 
-        viewModelScope.launch {
-            WidgetUpdateManager.updateAllWidgets(context)
-        }
+        WidgetUpdateManager.notifyWidgetUpdate(context)
     }
 }

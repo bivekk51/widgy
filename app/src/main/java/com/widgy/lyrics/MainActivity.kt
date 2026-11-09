@@ -28,9 +28,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        CoroutineScope(Dispatchers.IO).launch {
-            WidgetUpdateManager.updateAllWidgets(this@MainActivity)
-        }
+        WidgetUpdateManager.notifyWidgetUpdate(this@MainActivity)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

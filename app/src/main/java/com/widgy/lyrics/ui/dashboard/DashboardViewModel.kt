@@ -74,9 +74,7 @@ class DashboardViewModel(
         val lyricToPin = if (newPinned) _uiState.value.todayLyric else null
         prefs.setLyricPinned(newPinned, lyricToPin)
         _uiState.update { it.copy(isLyricPinned = newPinned) }
-        viewModelScope.launch {
-            WidgetUpdateManager.updateAllWidgets(context)
-        }
+        WidgetUpdateManager.notifyWidgetUpdate(context)
     }
 
     fun reloadConfig(context: Context) {
@@ -98,9 +96,7 @@ class DashboardViewModel(
         WidgetPreferences(context).saveThemeConfig(newConfig)
         val legacy = WidgetPreferences(context).getConfig()
         _uiState.update { it.copy(themeConfig = newConfig, widgetConfig = legacy) }
-        viewModelScope.launch {
-            WidgetUpdateManager.updateAllWidgets(context)
-        }
+        WidgetUpdateManager.notifyWidgetUpdate(context)
     }
 
     fun refreshTodayLyric(context: Context? = null) {
@@ -109,11 +105,11 @@ class DashboardViewModel(
             val interval = _uiState.value.rotationIntervalHours
             val newLyric = repository.refreshTodayLyric(intervalHours = interval)
             _uiState.update { it.copy(todayLyric = newLyric, isRefreshingLyric = false) }
-            context?.let {
+            context?.let { ctx ->
                 if (newLyric != null) {
-                    WidgetPreferences(it).saveCachedLyric(newLyric)
+                    WidgetPreferences(ctx).saveCachedLyric(newLyric)
                 }
-                WidgetUpdateManager.updateAllWidgets(it)
+                WidgetUpdateManager.notifyWidgetUpdate(ctx)
             }
         }
     }
@@ -121,31 +117,51 @@ class DashboardViewModel(
     fun updateWidgetConfig(newConfig: WidgetConfig, context: Context) {
         WidgetPreferences(context).saveConfig(newConfig)
         _uiState.update { it.copy(widgetConfig = newConfig) }
-        viewModelScope.launch {
-            WidgetUpdateManager.updateAllWidgets(context)
-        }
+        WidgetUpdateManager.notifyWidgetUpdate(context)
     }
 
     fun toggleSnippetActive(snippetId: Long, isActive: Boolean, context: Context? = null) {
         viewModelScope.launch {
             repository.setSnippetActive(snippetId, isActive)
-            context?.let { WidgetUpdateManager.updateAllWidgets(it) }
+            context?.let { WidgetUpdateManager.notifyWidgetUpdate(it) }
         }
     }
 
     fun deleteSong(songId: Long, context: Context? = null) {
         viewModelScope.launch {
             repository.deleteSong(songId)
-            loadTodayLyric()
-            context?.let { WidgetUpdateManager.updateAllWidgets(it) }
+            val interval = _uiState.value.rotationIntervalHours
+            val nextLyric = repository.getTodayDailyLyric(intervalHours = interval)
+            _uiState.update { it.copy(todayLyric = nextLyric) }
+            context?.let { ctx ->
+                val prefs = WidgetPreferences(ctx)
+                if (prefs.getCachedLyric()?.songId == songId) {
+                    if (nextLyric != null) {
+                        prefs.saveCachedLyric(nextLyric)
+                    } else {
+                        prefs.saveCachedLyric(DailyLyric(date = "", songId = 0L, snippetId = null, text = "Add lyrics to see your widget", songTitle = "", artistName = ""))
+                    }
+                }
+                WidgetUpdateManager.notifyWidgetUpdate(ctx)
+            }
         }
     }
 
     fun deleteSnippet(snippetId: Long, context: Context? = null) {
         viewModelScope.launch {
             repository.deleteSnippet(snippetId)
-            loadTodayLyric()
-            context?.let { WidgetUpdateManager.updateAllWidgets(it) }
+            val interval = _uiState.value.rotationIntervalHours
+            val nextLyric = repository.getTodayDailyLyric(intervalHours = interval)
+            _uiState.update { it.copy(todayLyric = nextLyric) }
+            context?.let { ctx ->
+                val prefs = WidgetPreferences(ctx)
+                if (nextLyric != null) {
+                    prefs.saveCachedLyric(nextLyric)
+                } else {
+                    prefs.saveCachedLyric(DailyLyric(date = "", songId = 0L, snippetId = null, text = "Add lyrics to see your widget", songTitle = "", artistName = ""))
+                }
+                WidgetUpdateManager.notifyWidgetUpdate(ctx)
+            }
         }
     }
 }
