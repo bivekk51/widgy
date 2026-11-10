@@ -23,6 +23,8 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -98,13 +100,90 @@ jobs:
           path: release-artifacts/*.apk
           retention-days: 14
 
+      - name: Generate Detailed Changelog
+        if: startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && inputs.create_release == true)
+        run: |
+          mkdir -p release-artifacts
+          CHANGELOG_FILE="release-artifacts/RELEASE_CHANGELOG.md"
+          TAG_NAME="${{ github.ref_name }}"
+          PREV_TAG=$(git describe --tags --abbrev=0 "${TAG_NAME}^" 2>/dev/null || echo "")
+
+          echo "## Release $TAG_NAME" > "$CHANGELOG_FILE"
+          echo "" >> "$CHANGELOG_FILE"
+
+          if [ -f "RELEASE_NOTES.md" ]; then
+            cat RELEASE_NOTES.md >> "$CHANGELOG_FILE"
+            echo "" >> "$CHANGELOG_FILE"
+          fi
+
+          TAG_ANNOTATION=$(git tag -l --format="%(contents)" "$TAG_NAME" 2>/dev/null | sed -e :a -e '/^\n*$/{$d;N;ba' -e '}' || true)
+          if [ -n "$TAG_ANNOTATION" ] && [ "$TAG_ANNOTATION" != "Release $TAG_NAME" ]; then
+            echo "### Overview" >> "$CHANGELOG_FILE"
+            echo "$TAG_ANNOTATION" >> "$CHANGELOG_FILE"
+            echo "" >> "$CHANGELOG_FILE"
+          fi
+
+          if [ -n "$PREV_TAG" ]; then
+            RANGE="${PREV_TAG}..${TAG_NAME}"
+          else
+            RANGE="${TAG_NAME}"
+          fi
+
+          FEATS=$(git log "$RANGE" --grep="^feat" --pretty=format:"* %s ([%h](https://github.com/${{ github.repository }}/commit/%H))" || true)
+          FIXES=$(git log "$RANGE" --grep="^fix" --pretty=format:"* %s ([%h](https://github.com/${{ github.repository }}/commit/%H))" || true)
+          PERF=$(git log "$RANGE" --grep="^perf" --pretty=format:"* %s ([%h](https://github.com/${{ github.repository }}/commit/%H))" || true)
+          REFACTOR=$(git log "$RANGE" --grep="^refactor" --pretty=format:"* %s ([%h](https://github.com/${{ github.repository }}/commit/%H))" || true)
+          CI=$(git log "$RANGE" --grep="^\(ci\|build\)" --pretty=format:"* %s ([%h](https://github.com/${{ github.repository }}/commit/%H))" || true)
+          OTHERS=$(git log "$RANGE" --invert-grep --grep="^\(feat\|fix\|perf\|refactor\|ci\|build\)" --pretty=format:"* %s ([%h](https://github.com/${{ github.repository }}/commit/%H))" || true)
+
+          if [ -n "$FEATS" ]; then
+            echo "### ✨ Features & Enhancements" >> "$CHANGELOG_FILE"
+            echo "$FEATS" >> "$CHANGELOG_FILE"
+            echo "" >> "$CHANGELOG_FILE"
+          fi
+
+          if [ -n "$FIXES" ]; then
+            echo "### 🐛 Bug Fixes" >> "$CHANGELOG_FILE"
+            echo "$FIXES" >> "$CHANGELOG_FILE"
+            echo "" >> "$CHANGELOG_FILE"
+          fi
+
+          if [ -n "$PERF" ]; then
+            echo "### ⚡ Performance Improvements" >> "$CHANGELOG_FILE"
+            echo "$PERF" >> "$CHANGELOG_FILE"
+            echo "" >> "$CHANGELOG_FILE"
+          fi
+
+          if [ -n "$REFACTOR" ]; then
+            echo "### ♻️ Code Refactoring" >> "$CHANGELOG_FILE"
+            echo "$REFACTOR" >> "$CHANGELOG_FILE"
+            echo "" >> "$CHANGELOG_FILE"
+          fi
+
+          if [ -n "$CI" ]; then
+            echo "### 🚀 Build & CI/CD" >> "$CHANGELOG_FILE"
+            echo "$CI" >> "$CHANGELOG_FILE"
+            echo "" >> "$CHANGELOG_FILE"
+          fi
+
+          if [ -n "$OTHERS" ] && [ "$OTHERS" != "" ]; then
+            echo "### 📦 Other Changes" >> "$CHANGELOG_FILE"
+            echo "$OTHERS" >> "$CHANGELOG_FILE"
+            echo "" >> "$CHANGELOG_FILE"
+          fi
+
+          if [ -n "$PREV_TAG" ]; then
+            echo "---" >> "$CHANGELOG_FILE"
+            echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREV_TAG}...${TAG_NAME}" >> "$CHANGELOG_FILE"
+          fi
+
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && inputs.create_release == true)
         uses: softprops/action-gh-release@v2
         with:
           files: release-artifacts/*.apk
           name: "Widgy Release ${{ github.ref_name }}"
-          generate_release_notes: true
+          body_path: release-artifacts/RELEASE_CHANGELOG.md
           draft: false
           prerelease: false
         env:
