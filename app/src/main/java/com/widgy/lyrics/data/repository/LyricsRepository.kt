@@ -9,8 +9,17 @@ import com.widgy.lyrics.data.db.SongWithSnippets
 import com.widgy.lyrics.data.model.LrcTrackDto
 import com.widgy.lyrics.domain.engine.DailyRotationEngine
 import com.widgy.lyrics.domain.model.DailyLyric
+import com.widgy.lyrics.domain.model.playlist.PlaylistExtractResult
+import com.widgy.lyrics.domain.model.playlist.PlaylistImportState
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import java.time.LocalDate
+import kotlin.coroutines.coroutineContext
 
 class LyricsRepository(
     private val db: AppDatabase,
@@ -114,6 +123,129 @@ class LyricsRepository(
 
     suspend fun deleteSnippet(snippetId: Long) {
         db.snippetDao().deleteSnippetById(snippetId)
+    }
+
+    fun importPlaylist(
+        playlist: PlaylistExtractResult,
+        delayMs: Long = 150L
+    ): Flow<PlaylistImportState> = flow {
+        val total = playlist.tracks.size
+        if (total == 0) {
+            emit(PlaylistImportState.Success(playlist.playlistTitle, 0, 0, 0))
+            return@flow
+        }
+
+        var current = 0
+        var importedCount = 0
+        var skippedCount = 0
+        val semaphore = Semaphore(2)
+
+        try {
+            for (query in playlist.tracks) {
+                coroutineContext.ensureActive()
+
+                emit(
+                    PlaylistImportState.FetchingLyrics(
+                        playlistTitle = playlist.playlistTitle,
+                        current = current,
+                        total = total,
+                        currentTrack = query.trackName,
+                        matchedCount = importedCount
+                    )
+                )
+
+                // 1. Check local deduplication before making network calls
+                val existing = db.songDao().findByTitleAndArtist(query.trackName, query.artistName)
+                if (existing != null) {
+                    skippedCount++
+                    current++
+                    continue
+                }
+
+                // 2. Fetch lyrics with rate limiting and search fallback
+                var matchedDto: LrcTrackDto? = null
+                semaphore.withPermit {
+                    if (delayMs > 0) delay(delayMs)
+
+                    // Primary exact lookup
+                    var result = client.getLyrics(query.trackName, query.artistName)
+
+                    // If 429, retry once after backoff
+                    if (result.isFailure && result.exceptionOrNull()?.message?.contains("429") == true) {
+                        delay(3000L)
+                        result = client.getLyrics(query.trackName, query.artistName)
+                    }
+
+                    val primaryDto = result.getOrNull()
+                    if (primaryDto != null && (!primaryDto.plainLyrics.isNullOrBlank() || !primaryDto.syncedLyrics.isNullOrBlank())) {
+                        matchedDto = primaryDto
+                    } else {
+                        // Secondary search fallback
+                        val searchResult = client.searchTracks("${query.artistName} ${query.trackName}")
+                        val candidates = searchResult.getOrNull().orEmpty()
+                        matchedDto = candidates.firstOrNull {
+                            !it.plainLyrics.isNullOrBlank() || !it.syncedLyrics.isNullOrBlank()
+                        }
+                    }
+                }
+
+                // 3. Insert into database if lyrics found and not already inserted
+                if (matchedDto != null) {
+                    val lyricsText = matchedDto?.plainLyrics?.ifBlank { matchedDto?.syncedLyrics.orEmpty() }
+                        ?: matchedDto?.syncedLyrics.orEmpty()
+
+                    if (lyricsText.isNotBlank()) {
+                        val finalTrackTitle = matchedDto!!.displayTitle.ifBlank { query.trackName }
+                        val finalArtistName = matchedDto!!.artistName?.ifBlank { query.artistName } ?: query.artistName
+                        val lrclibId = matchedDto!!.id
+
+                        val alreadyInDb = (lrclibId != null && db.songDao().findByLrclibId(lrclibId) != null) ||
+                                db.songDao().findByTitleAndArtist(finalTrackTitle, finalArtistName) != null
+
+                        if (!alreadyInDb) {
+                            db.songDao().insertSong(
+                                SongEntity(
+                                    title = finalTrackTitle,
+                                    artist = finalArtistName,
+                                    album = matchedDto!!.albumName ?: query.albumName,
+                                    plainLyrics = lyricsText,
+                                    lrclibId = lrclibId,
+                                    isRandomPool = true
+                                )
+                            )
+                            importedCount++
+                        } else {
+                            skippedCount++
+                        }
+                    } else {
+                        skippedCount++
+                    }
+                } else {
+                    skippedCount++
+                }
+
+                current++
+            }
+
+            emit(
+                PlaylistImportState.Success(
+                    playlistTitle = playlist.playlistTitle,
+                    totalTracks = total,
+                    importedCount = importedCount,
+                    skippedCount = skippedCount
+                )
+            )
+        } catch (e: CancellationException) {
+            emit(
+                PlaylistImportState.Cancelled(
+                    playlistTitle = playlist.playlistTitle,
+                    importedCount = importedCount
+                )
+            )
+            throw e
+        } catch (e: Exception) {
+            emit(PlaylistImportState.Error(e.message ?: "Failed to import playlist"))
+        }
     }
 
     suspend fun getTodayDailyLyric(forceRefresh: Boolean = false, intervalHours: Int = 24): DailyLyric? {
