@@ -37,7 +37,7 @@ jobs:
         with:
           cache-read-only: false
           cache-cleanup: never
-          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY || 'aYNdb4QIYZar0FPl3X1K4A==' }}
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
