@@ -19,6 +19,12 @@ interface SongDao {
     @Query("SELECT * FROM songs WHERE id = :id LIMIT 1")
     suspend fun getSongById(id: Long): SongEntity?
 
+    @Query("SELECT * FROM songs WHERE lrclibId = :lrclibId LIMIT 1")
+    suspend fun findByLrclibId(lrclibId: Long): SongEntity?
+
+    @Query("SELECT * FROM songs WHERE LOWER(title) = LOWER(:title) AND LOWER(artist) = LOWER(:artist) LIMIT 1")
+    suspend fun findByTitleAndArtist(title: String, artist: String): SongEntity?
+
     @Query("SELECT * FROM songs ORDER BY createdAt DESC")
     fun getAllSongs(): Flow<List<SongEntity>>
 
