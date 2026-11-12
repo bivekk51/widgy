@@ -7,6 +7,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.mutableStateOf
 import androidx.navigation.compose.rememberNavController
+import com.widgy.lyrics.data.api.playlist.SharedHttpClient
 import com.widgy.lyrics.data.db.AppDatabase
 import com.widgy.lyrics.data.repository.LyricsRepository
 import com.widgy.lyrics.ui.navigation.WidgyNavGraph
@@ -25,6 +26,7 @@ class MainActivity : ComponentActivity() {
 
     private val targetSongId = mutableStateOf<Long?>(null)
     private val targetSnippetText = mutableStateOf<String?>(null)
+    private val sharedPlaylistUrl = mutableStateOf<String?>(null)
 
     override fun onResume() {
         super.onResume()
@@ -41,7 +43,7 @@ class MainActivity : ComponentActivity() {
         val prefs = com.widgy.lyrics.data.preferences.WidgetPreferences(this)
         val repository = LyricsRepository(db, pinnedLyricProvider = { prefs.getPinnedLyric() })
 
-        extractSongFromIntent(intent)
+        extractIntentData(intent)
 
         setContent {
             WidgyTheme {
@@ -51,7 +53,9 @@ class MainActivity : ComponentActivity() {
                     repository = repository,
                     targetSongId = targetSongId.value,
                     onTargetSongConsumed = { targetSongId.value = null },
-                    initialSnippetText = targetSnippetText.value
+                    initialSnippetText = targetSnippetText.value,
+                    sharedPlaylistUrl = sharedPlaylistUrl.value,
+                    onSharedPlaylistUrlConsumed = { sharedPlaylistUrl.value = null }
                 )
             }
         }
@@ -60,15 +64,23 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        extractSongFromIntent(intent)
+        extractIntentData(intent)
     }
 
-    private fun extractSongFromIntent(intent: Intent?) {
+    private fun extractIntentData(intent: Intent?) {
         val songId = intent?.getLongExtra(EXTRA_SONG_ID, -1L)?.takeIf { it > 0 }
         val snippet = intent?.getStringExtra(EXTRA_SNIPPET_TEXT)
         if (songId != null) {
             targetSongId.value = songId
             targetSnippetText.value = snippet
+        }
+
+        if (intent?.action == Intent.ACTION_SEND && intent.type?.startsWith("text/") == true) {
+            val text = intent.getStringExtra(Intent.EXTRA_TEXT)
+            val extractedUrl = text?.let { SharedHttpClient.extractUrlFromText(it) }
+            if (extractedUrl != null) {
+                sharedPlaylistUrl.value = extractedUrl
+            }
         }
     }
 }
