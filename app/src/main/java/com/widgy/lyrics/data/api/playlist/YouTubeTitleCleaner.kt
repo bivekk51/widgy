@@ -65,16 +65,21 @@ object YouTubeTitleCleaner {
         return channel
     }
 
+    private val TRIMMABLE_CHARS = charArrayOf(
+        ' ', '"', '\'', '-', '–', '—', ':', '.',
+        '‘', '’', '“', '”', '《', '》', '『', '』', '「', '」', '।', '॥'
+    )
+
     private fun cleanTitle(title: String): String {
         return title
             .replace(NOISE_TAGS, "")
             .replace(BRACKETED_FEATURING, "")
             .replace(UNBRACKETED_FEATURING, "")
-            .trim(' ', '"', '\'', '-', '–', '—', ':', '.')
+            .trim(*TRIMMABLE_CHARS)
     }
 
     private fun cleanArtist(artist: String): String {
         return cleanChannel(artist)
-            .trim(' ', '"', '\'', '-', '–', '—', ':', '.')
+            .trim(*TRIMMABLE_CHARS)
     }
 }

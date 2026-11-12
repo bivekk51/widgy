@@ -71,4 +71,20 @@ class YouTubeTitleCleanerTest {
         assertEquals("Adele", YouTubeTitleCleaner.cleanChannel("Adele - Topic"))
         assertEquals("Kendrick Lamar", YouTubeTitleCleaner.cleanChannel("Kendrick Lamar Official"))
     }
+
+    @Test
+    fun clean_trimsUnicodeQuotesAndBrackets() {
+        val (title, artist) = YouTubeTitleCleaner.clean(
+            rawTitle = "Artist - “Song Title”",
+            channelByline = "Artist"
+        )
+        assertEquals("Song Title", title)
+        assertEquals("Artist", artist)
+
+        val (cjkTitle, _) = YouTubeTitleCleaner.clean(
+            rawTitle = "Artist - 《夜に駆ける》",
+            channelByline = "Artist"
+        )
+        assertEquals("夜に駆ける", cjkTitle)
+    }
 }

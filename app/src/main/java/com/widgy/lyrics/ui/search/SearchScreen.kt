@@ -3,6 +3,7 @@ package com.widgy.lyrics.ui.search
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -44,6 +45,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.widgy.lyrics.data.model.LrcTrackDto
+import com.widgy.lyrics.ui.theme.WidgyShapes
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,10 +69,20 @@ fun SearchScreen(
                     }
                 },
                 actions = {
-                    androidx.compose.material3.TextButton(onClick = onImportPlaylistClick) {
-                        Text("Import", style = MaterialTheme.typography.labelLarge)
+                    androidx.compose.material3.TextButton(
+                        onClick = onImportPlaylistClick,
+                        modifier = Modifier.defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
+                    ) {
+                        Text(
+                            text = "Import",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
                     }
-                    IconButton(onClick = onManualEntryClick) {
+                    IconButton(
+                        onClick = onManualEntryClick,
+                        modifier = Modifier.defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
+                    ) {
                         Icon(Icons.Default.Add, contentDescription = "Add custom track")
                     }
                 }
@@ -91,7 +103,10 @@ fun SearchScreen(
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                 trailingIcon = {
                     if (state.query.isNotEmpty()) {
-                        IconButton(onClick = { viewModel.onQueryChanged("") }) {
+                        IconButton(
+                            onClick = { viewModel.onQueryChanged("") },
+                            modifier = Modifier.defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
+                        ) {
                             Icon(Icons.Default.Clear, contentDescription = "Clear")
                         }
                     }
@@ -99,7 +114,7 @@ fun SearchScreen(
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
                 singleLine = true,
-                shape = RoundedCornerShape(12.dp)
+                shape = WidgyShapes.medium
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -135,14 +150,15 @@ fun SearchScreen(
                             modifier = Modifier.padding(16.dp)
                         ) {
                             Text(
-                                text = "No lyrics found for \"${state.query}\"",
+                                text = "No lyrics found for · ${state.query}",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Spacer(modifier = Modifier.height(12.dp))
                             Button(
                                 onClick = onManualEntryClick,
-                                shape = RoundedCornerShape(12.dp)
+                                modifier = Modifier.defaultMinSize(minHeight = 48.dp),
+                                shape = WidgyShapes.medium
                             ) {
                                 Text("Add Custom Lyrics Manually")
                             }
@@ -161,7 +177,7 @@ fun SearchScreen(
                             Text(
                                 text = "Search any song to fetch lyrics from LRCLIB, import a full playlist from Spotify or YouTube, or create a custom snippet.",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.outline,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
                             )
                             Spacer(modifier = Modifier.height(16.dp))
@@ -170,16 +186,18 @@ fun SearchScreen(
                             ) {
                                 Button(
                                     onClick = onImportPlaylistClick,
-                                    shape = RoundedCornerShape(12.dp)
+                                    modifier = Modifier.defaultMinSize(minHeight = 48.dp),
+                                    shape = WidgyShapes.medium
                                 ) {
                                     Text("Import Playlist")
                                 }
                                 OutlinedButton(
                                     onClick = onManualEntryClick,
-                                    shape = RoundedCornerShape(12.dp)
+                                    modifier = Modifier.defaultMinSize(minHeight = 48.dp),
+                                    shape = WidgyShapes.medium
                                 ) {
                                     Icon(Icons.Default.Add, contentDescription = null)
-                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Spacer(modifier = Modifier.width(8.dp))
                                     Text("Custom")
                                 }
                             }
@@ -208,7 +226,7 @@ private fun TrackResultItem(
             .fillMaxWidth()
             .padding(vertical = 4.dp)
             .clickable { onClick() },
-        shape = RoundedCornerShape(16.dp),
+        shape = WidgyShapes.large,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
         )
@@ -229,7 +247,7 @@ private fun TrackResultItem(
                 Text(
                     text = track.albumName,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.outline
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                 )
             }
         }

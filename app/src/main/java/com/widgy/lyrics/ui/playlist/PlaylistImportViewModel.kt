@@ -72,6 +72,12 @@ class PlaylistImportViewModel(
         }
     }
 
+    fun clearError() {
+        if (_importState.value is PlaylistImportState.Error) {
+            _importState.value = PlaylistImportState.Idle
+        }
+    }
+
     fun reset() {
         importJob?.cancel()
         _importState.value = PlaylistImportState.Idle

@@ -1,8 +1,10 @@
 package com.widgy.lyrics.ui.playlist
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,9 +14,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
@@ -29,7 +32,6 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -45,9 +47,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.widgy.lyrics.data.api.playlist.SharedHttpClient
 import com.widgy.lyrics.domain.model.playlist.PlaylistImportState
 import com.widgy.lyrics.ui.theme.WidgyShapes
 
@@ -77,11 +81,24 @@ fun PlaylistImportBottomSheet(
         }
     }
 
+    val handleDismissWithSync = {
+        val currentState = viewModel.importState.value
+        val shouldSync = currentState is PlaylistImportState.Success ||
+                (currentState is PlaylistImportState.Cancelled && currentState.importedCount > 0)
+        if (isBusy) {
+            viewModel.cancelImport()
+        }
+        viewModel.reset()
+        if (shouldSync) {
+            onImportSuccess()
+        }
+        onDismiss()
+    }
+
     ModalBottomSheet(
         onDismissRequest = {
             if (!isBusy) {
-                viewModel.reset()
-                onDismiss()
+                handleDismissWithSync()
             }
         },
         sheetState = sheetState,
@@ -92,7 +109,9 @@ fun PlaylistImportBottomSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 20.dp)
+                .navigationBarsPadding()
+                .imePadding()
+                .padding(horizontal = 24.dp, vertical = 24.dp)
         ) {
             // Header
             Row(
@@ -107,6 +126,7 @@ fun PlaylistImportBottomSheet(
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "Add tracks directly to your Random Pool",
                         style = MaterialTheme.typography.bodySmall,
@@ -115,11 +135,7 @@ fun PlaylistImportBottomSheet(
                 }
 
                 IconButton(
-                    onClick = {
-                        if (isBusy) viewModel.cancelImport()
-                        viewModel.reset()
-                        onDismiss()
-                    },
+                    onClick = handleDismissWithSync,
                     modifier = Modifier.defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
                 ) {
                     Icon(
@@ -134,26 +150,25 @@ fun PlaylistImportBottomSheet(
 
             when (val state = importState) {
                 is PlaylistImportState.Idle, is PlaylistImportState.Error -> {
-                    // Supported platforms quiet monochrome chips
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        PlatformPill("Spotify")
-                        PlatformPill("YouTube")
-                        PlatformPill("Deezer")
-                    }
+                    Text(
+                        text = "Supports public Spotify · YouTube · Deezer playlists",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
 
                     Spacer(modifier = Modifier.height(16.dp))
 
                     // Input Field
                     OutlinedTextField(
                         value = inputUrl,
-                        onValueChange = { inputUrl = it },
+                        onValueChange = {
+                            inputUrl = it
+                            viewModel.clearError()
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         placeholder = {
                             Text(
-                                "Paste playlist link here...",
+                                "Paste playlist link here…",
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                                 fontSize = 14.sp
                             )
@@ -169,7 +184,10 @@ fun PlaylistImportBottomSheet(
                         trailingIcon = {
                             if (inputUrl.isNotBlank()) {
                                 IconButton(
-                                    onClick = { inputUrl = "" },
+                                    onClick = {
+                                        inputUrl = ""
+                                        viewModel.clearError()
+                                    },
                                     modifier = Modifier.defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
                                 ) {
                                     Icon(
@@ -184,12 +202,14 @@ fun PlaylistImportBottomSheet(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // User-initiated Paste button
+                    // User-initiated Paste button with auto URL extraction
                     OutlinedButton(
                         onClick = {
                             val clipText = clipboardManager.getText()?.text
                             if (!clipText.isNullOrBlank()) {
-                                inputUrl = clipText.trim()
+                                val extracted = SharedHttpClient.extractUrlFromText(clipText) ?: clipText.trim()
+                                inputUrl = extracted
+                                viewModel.clearError()
                             }
                         },
                         modifier = Modifier
@@ -204,25 +224,33 @@ fun PlaylistImportBottomSheet(
                         )
                     }
 
-                    // Error Banner if present
-                    if (state is PlaylistImportState.Error) {
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(WidgyShapes.small)
-                                .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f))
-                                .padding(12.dp)
-                        ) {
-                            Text(
-                                text = state.message,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.error
-                            )
+                    // Error Banner if present with smooth animated expansion
+                    AnimatedVisibility(
+                        visible = state is PlaylistImportState.Error,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        if (state is PlaylistImportState.Error) {
+                            Column {
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(WidgyShapes.small)
+                                        .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f))
+                                        .padding(12.dp)
+                                ) {
+                                    Text(
+                                        text = state.message,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                }
+                            }
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
 
                     // Primary Import CTA
                     Button(
@@ -252,7 +280,7 @@ fun PlaylistImportBottomSheet(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "Reading playlist tracks...",
+                            text = "Reading playlist tracks…",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -260,7 +288,7 @@ fun PlaylistImportBottomSheet(
                         LinearProgressIndicator(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(6.dp)
+                                .height(8.dp)
                                 .clip(WidgyShapes.small),
                             color = MaterialTheme.colorScheme.primary,
                             trackColor = MaterialTheme.colorScheme.surfaceVariant
@@ -297,12 +325,15 @@ fun PlaylistImportBottomSheet(
                                 overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier.weight(1f)
                             )
+                            Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = "${state.current} / ${state.total}",
                                 fontFamily = FontFamily.Monospace,
                                 fontWeight = FontWeight.Bold,
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.primary
+                                textAlign = TextAlign.End,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.defaultMinSize(minWidth = 56.dp)
                             )
                         }
 
@@ -313,31 +344,31 @@ fun PlaylistImportBottomSheet(
                             progress = { progress },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(6.dp)
+                                .height(8.dp)
                                 .clip(WidgyShapes.small),
                             color = MaterialTheme.colorScheme.primary,
                             trackColor = MaterialTheme.colorScheme.surfaceVariant
                         )
 
-                        Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
 
-                        // Fixed height 20dp box for current track title to eliminate jitter
+                        // Multi-script safe minHeight 24dp box for current track title
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(20.dp),
+                                .defaultMinSize(minHeight = 24.dp),
                             contentAlignment = Alignment.CenterStart
                         ) {
                             Text(
                                 text = state.currentTrack,
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.outline,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(20.dp))
+                        Spacer(modifier = Modifier.height(24.dp))
 
                         OutlinedButton(
                             onClick = { viewModel.cancelImport() },
@@ -365,29 +396,26 @@ fun PlaylistImportBottomSheet(
                             color = MaterialTheme.colorScheme.primary
                         )
                         Text(
-                            text = "songs added to Random Pool",
+                            text = if (state.importedCount == 1) "song added to Random Pool" else "songs added to Random Pool",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
 
                         if (state.skippedCount > 0) {
-                            Spacer(modifier = Modifier.height(6.dp))
+                            Spacer(modifier = Modifier.height(8.dp))
+                            val trackWord = if (state.skippedCount == 1) "track was" else "tracks were"
                             Text(
-                                text = "${state.skippedCount} tracks were already in your library or had no lyrics available on LRCLIB.",
+                                text = "${state.skippedCount} $trackWord already in your library or had no lyrics available on LRCLIB.",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.outline
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
 
                         Spacer(modifier = Modifier.height(24.dp))
 
                         Button(
-                            onClick = {
-                                viewModel.reset()
-                                onImportSuccess()
-                                onDismiss()
-                            },
+                            onClick = handleDismissWithSync,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .defaultMinSize(minHeight = 48.dp),
@@ -416,7 +444,7 @@ fun PlaylistImportBottomSheet(
                             color = MaterialTheme.colorScheme.primary
                         )
                         Text(
-                            text = "songs added before cancellation",
+                            text = if (state.importedCount == 1) "song added before cancellation" else "songs added before cancellation",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurface
@@ -425,11 +453,7 @@ fun PlaylistImportBottomSheet(
                         Spacer(modifier = Modifier.height(24.dp))
 
                         Button(
-                            onClick = {
-                                viewModel.reset()
-                                onImportSuccess()
-                                onDismiss()
-                            },
+                            onClick = handleDismissWithSync,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .defaultMinSize(minHeight = 48.dp),
@@ -446,27 +470,6 @@ fun PlaylistImportBottomSheet(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-        }
-    }
-}
-
-@Composable
-private fun PlatformPill(label: String) {
-    Surface(
-        shape = WidgyShapes.small,
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.defaultMinSize(minHeight = 32.dp)
-    ) {
-        Box(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.Medium
-            )
         }
     }
 }
