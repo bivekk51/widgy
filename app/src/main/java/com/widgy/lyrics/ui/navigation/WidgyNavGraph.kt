@@ -4,7 +4,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -20,9 +22,12 @@ import com.widgy.lyrics.ui.history.ScrapbookScreen
 import com.widgy.lyrics.ui.history.ScrapbookViewModel
 import com.widgy.lyrics.ui.lyrics.LyricsViewerScreen
 import com.widgy.lyrics.ui.lyrics.LyricsViewerViewModel
+import com.widgy.lyrics.ui.playlist.PlaylistImportBottomSheet
+import com.widgy.lyrics.ui.playlist.PlaylistImportViewModel
 import com.widgy.lyrics.ui.search.SearchScreen
 import com.widgy.lyrics.ui.search.SearchViewModel
 import com.widgy.lyrics.ui.theme.ThemeStudioScreen
+import com.widgy.lyrics.widget.WidgetUpdateManager
 
 object NavRoutes {
     const val DASHBOARD = "dashboard"
@@ -41,11 +46,15 @@ fun WidgyNavGraph(
     repository: LyricsRepository,
     targetSongId: Long? = null,
     onTargetSongConsumed: () -> Unit = {},
-    initialSnippetText: String? = null
+    initialSnippetText: String? = null,
+    sharedPlaylistUrl: String? = null,
+    onSharedPlaylistUrlConsumed: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val dashboardViewModel: DashboardViewModel = viewModel { DashboardViewModel(repository, context) }
     var selectedOnlineTrack = remember { mutableListOf<LrcTrackDto>() }
+    var showPlaylistImportSheet by remember { mutableStateOf(false) }
+    var activePlaylistImportUrl by remember { mutableStateOf<String?>(null) }
 
     // Reactively navigate when targetSongId is provided (cold launch or onNewIntent from widget)
     LaunchedEffect(targetSongId) {
@@ -53,6 +62,35 @@ fun WidgyNavGraph(
             onTargetSongConsumed()
             navController.navigate(NavRoutes.lyricsLocal(targetSongId))
         }
+    }
+
+    // Auto-open playlist import sheet when an external URL is shared to Widgy
+    LaunchedEffect(sharedPlaylistUrl) {
+        if (!sharedPlaylistUrl.isNullOrBlank()) {
+            activePlaylistImportUrl = sharedPlaylistUrl
+            showPlaylistImportSheet = true
+            onSharedPlaylistUrlConsumed()
+        }
+    }
+
+    if (showPlaylistImportSheet) {
+        val importViewModel: PlaylistImportViewModel = viewModel(
+            factory = PlaylistImportViewModel.Factory(repository)
+        )
+        PlaylistImportBottomSheet(
+            initialUrl = activePlaylistImportUrl,
+            onDismiss = {
+                showPlaylistImportSheet = false
+                activePlaylistImportUrl = null
+            },
+            onImportSuccess = {
+                dashboardViewModel.loadTodayLyric(context)
+                WidgetUpdateManager.notifyWidgetUpdate(context)
+                showPlaylistImportSheet = false
+                activePlaylistImportUrl = null
+            },
+            viewModel = importViewModel
+        )
     }
 
     // Start at DASHBOARD so back press always brings user to Dashboard
@@ -66,7 +104,11 @@ fun WidgyNavGraph(
                 onAddSongClick = { navController.navigate(NavRoutes.SEARCH) },
                 onSongClick = { songId -> navController.navigate(NavRoutes.lyricsLocal(songId)) },
                 onChangeThemeClick = { navController.navigate(NavRoutes.THEME_STUDIO) },
-                onScrapbookClick = { navController.navigate(NavRoutes.SCRAPBOOK) }
+                onScrapbookClick = { navController.navigate(NavRoutes.SCRAPBOOK) },
+                onImportPlaylistClick = {
+                    activePlaylistImportUrl = null
+                    showPlaylistImportSheet = true
+                }
             )
         }
 
@@ -104,6 +146,10 @@ fun WidgyNavGraph(
                 },
                 onManualEntryClick = {
                     navController.navigate(NavRoutes.MANUAL_ENTRY)
+                },
+                onImportPlaylistClick = {
+                    activePlaylistImportUrl = null
+                    showPlaylistImportSheet = true
                 },
                 onBack = { navController.popBackStack() }
             )

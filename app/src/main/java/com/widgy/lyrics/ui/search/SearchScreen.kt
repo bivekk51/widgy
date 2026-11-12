@@ -51,6 +51,7 @@ fun SearchScreen(
     viewModel: SearchViewModel,
     onTrackSelected: (LrcTrackDto) -> Unit,
     onManualEntryClick: () -> Unit = {},
+    onImportPlaylistClick: () -> Unit = {},
     onBack: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -66,6 +67,9 @@ fun SearchScreen(
                     }
                 },
                 actions = {
+                    androidx.compose.material3.TextButton(onClick = onImportPlaylistClick) {
+                        Text("Import", style = MaterialTheme.typography.labelLarge)
+                    }
                     IconButton(onClick = onManualEntryClick) {
                         Icon(Icons.Default.Add, contentDescription = "Add custom track")
                     }
@@ -155,19 +159,29 @@ fun SearchScreen(
                             modifier = Modifier.padding(24.dp)
                         ) {
                             Text(
-                                text = "Search any song to fetch lyrics from LRCLIB, or create your own custom snippet.",
+                                text = "Search any song to fetch lyrics from LRCLIB, import a full playlist from Spotify or YouTube, or create a custom snippet.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.outline,
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
                             )
                             Spacer(modifier = Modifier.height(16.dp))
-                            OutlinedButton(
-                                onClick = onManualEntryClick,
-                                shape = RoundedCornerShape(12.dp)
+                            Row(
+                                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)
                             ) {
-                                Icon(Icons.Default.Add, contentDescription = null)
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("Add Custom Track / Paste Lyrics")
+                                Button(
+                                    onClick = onImportPlaylistClick,
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Text("Import Playlist")
+                                }
+                                OutlinedButton(
+                                    onClick = onManualEntryClick,
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Icon(Icons.Default.Add, contentDescription = null)
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("Custom")
+                                }
                             }
                         }
                     }
