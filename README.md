@@ -42,6 +42,8 @@ A distraction-free, open-source Android app to curate 1–2 line poetic verses f
 
 ## ✨ Features
 
+- **🎵 One-Tap Playlist Import (New in v1.6.0)**: Drop or share playlist links from Spotify, YouTube, YouTube Music, or Deezer. Zero-auth on-device track extraction, batch lyric fetching, and automatic Random Pool seeding for daily widget rotation.
+- **📲 System Share Sheet (`ACTION_SEND`)**: Tap Share → Widgy directly in Spotify, YouTube Music, or Deezer to import playlists on the fly.
 - **🔎 Instant Lyrics via LRCLIB**: Search millions of synced and plain lyrics instantly without API keys, accounts, or rate limits.
 - **✂️ Curate 1–2 Lines**: Tap any stanza to pick the exact couplet that moves you, or let the smart Random Pool pick lines for you.
 - **🎨 Category-Based Theme Studio**: Redesigned mobile customization workspace with dedicated tabs:
