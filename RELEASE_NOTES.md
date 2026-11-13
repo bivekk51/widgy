@@ -1,29 +1,20 @@
-# Widgy v1.6.0 – Drop Any Playlist, Stream Fresh Lyrics to Your Widget
+# Widgy v1.6.1 – Charles Unslop Design System Refinements & AAA Contrast
 
-Widgy v1.6.0 introduces our most requested feature: **One-Tap Playlist Import**. Drop or share any playlist link from Spotify, YouTube, YouTube Music, or Deezer, and Widgy will automatically extract the tracklist on-device, batch-fetch lyrics from LRCLIB, and stream them directly into your home screen widget's daily rotation.
+Widgy v1.6.1 applies the comprehensive `charles-unslop` design craft principles across the core Android interface, removing visual line noise, subtracting unnecessary containers, enforcing a strict 4px/8px rhythm, and elevating contrast ratios to WCAG AAA.
 
 ---
 
-### ✨ What's New in v1.6.0
+### ✨ What's New in v1.6.1
 
-#### 🎵 Multi-Platform Playlist Link Import
-* **Spotify, YouTube & Deezer**: Drop any public playlist or album link directly into Widgy.
-* **100% Zero-Auth & On-Device**: No Spotify accounts, Google credentials, or API keys required. Extraction runs entirely on your phone via privacy-respecting client scrapers and open APIs.
-* **System Share Sheet (`ACTION_SEND`)**: While listening in Spotify, YouTube Music, or Deezer, tap **Share → Widgy** to instantly open the import sheet with the link pre-filled.
+#### 🎨 Charles Unslop Craft & Subtraction
+* **Dividers Subtracted**: Removed redundant visual dividers in Theme Studio—proximity, whitespace, and natural hierarchy now group categories, dock controls, and actions without unnecessary line clutter.
+* **Surface Nesting Removed**: Subtracted redundant Card wrappers around the Rotation Frequency selector; controls now sit directly on the surface canvas grouped by clean proximity.
+* **Editorial Typographic Restraint**: Removed arbitrary letter spacing on top app bars and enforced natural sentence case across headers, chips, and past lyric scrapbooks.
 
-#### 🎲 Instant Random Pool Auto-Rotation
-* All imported songs with available lyrics automatically enter your library tagged as **Random Pool** tracks.
-* The midnight rotation engine immediately includes them in your daily widget rotation.
-* You can tap any song from **My Curation** at your own convenience to review the full lyrics and pick custom 1–2 line couplets.
+#### 📐 Strict 4px/8px Grid Spacing & Unified Tokens
+* Snapped all off-grid paddings (such as `10.dp` and `6.dp`) to strict `8.dp` tokens across `ThemeStudioScreen`, `DashboardScreen`, and `LyricsViewerScreen`.
+* Unified hardcoded radii throughout the app to semantic `WidgyShapes` design tokens (`small` 8dp, `medium` 12dp, `large` 16dp).
 
-#### 🛡️ Robust Deduplication & Snippet Cascade Protection
-* Existing songs and curated snippets in your library are never overwritten or deleted during batch imports.
-* Advanced rate-limiting with exponential backoff on HTTP 429/503 and intelligent `/api/search` fallback ensure maximum lyric match rates without server rejection.
-
-#### 🎨 Council UI/UX Max & Unslopped (Rated 9.70 / 10.0)
-Audited and approved by our Council of Agents (*Dieter*, *Material*, and *Kerning*):
-* **Visual Restraint**: Zero artificial badge slop, quiet monochrome chrome, and authentic editorial character.
-* **WCAG AAA Contrast**: All secondary metadata and track indicators exceed 7.5:1 contrast ratios.
-* **Edge-to-Edge System Ergonomics**: Full support for Android 14/15 3-button navigation, gesture bars, and IME keyboard insets.
-* **Multilingual Typography**: Safe bounding boxes that protect Devanagari (Nepali/Hindi), Arabic, and CJK ascenders, descenders, and vowel marks from clipping.
-* **Tactile Polish**: Real-time monospace tabular progress counters, smooth animated state transitions, and seamless swipe dismissal synchronization.
+#### 👁️ WCAG AAA Contrast Accessibility
+* Replaced low-contrast border outlines (`outline`, 1.38:1) on secondary labels, delete icons, and helper texts with semantic `onSurfaceVariant` (~7.5:1 AAA contrast), ensuring crystal-clear legibility under any lighting conditions.
+* Replaced hardcoded hex colors with theme-aware semantic color scheme tokens.

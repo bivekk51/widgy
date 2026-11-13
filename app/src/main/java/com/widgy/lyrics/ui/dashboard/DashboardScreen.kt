@@ -75,6 +75,7 @@ import androidx.compose.ui.unit.sp
 import com.widgy.lyrics.data.db.SnippetEntity
 import com.widgy.lyrics.data.db.SongWithSnippets
 import com.widgy.lyrics.domain.model.DailyLyric
+import com.widgy.lyrics.ui.theme.WidgyShapes
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -100,8 +101,7 @@ fun DashboardScreen(
                 title = {
                     Text(
                         "Widgy",
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp
+                        fontWeight = FontWeight.SemiBold
                     )
                 },
                 actions = {
@@ -114,7 +114,7 @@ fun DashboardScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onAddSongClick,
-                shape = RoundedCornerShape(16.dp),
+                shape = WidgyShapes.large,
                 containerColor = MaterialTheme.colorScheme.primary
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Add Song")
@@ -148,7 +148,7 @@ fun DashboardScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(48.dp),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = WidgyShapes.medium,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.surfaceVariant,
                         contentColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -169,46 +169,42 @@ fun DashboardScreen(
             }
 
             item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                    )
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = "Rotation Frequency",
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Rotation frequency",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = if (state.rotationIntervalHours >= 24) "Daily at midnight" else "Every ${state.rotationIntervalHours}h",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        listOf(1 to "1h", 3 to "3h", 6 to "6h", 12 to "12h", 24 to "Daily").forEach { (hours, label) ->
+                            val isSelected = state.rotationIntervalHours == hours
+                            FilterChip(
+                                selected = isSelected,
+                                onClick = { viewModel.updateRotationInterval(hours, context) },
+                                label = { Text(label, fontSize = 11.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) },
+                                modifier = Modifier.weight(1f),
+                                shape = WidgyShapes.small
                             )
-                            Text(
-                                text = if (state.rotationIntervalHours >= 24) "Daily at Midnight" else "Every ${state.rotationIntervalHours}h",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            listOf(1 to "1h", 3 to "3h", 6 to "6h", 12 to "12h", 24 to "Daily").forEach { (hours, label) ->
-                                val isSelected = state.rotationIntervalHours == hours
-                                FilterChip(
-                                    selected = isSelected,
-                                    onClick = { viewModel.updateRotationInterval(hours, context) },
-                                    label = { Text(label, fontSize = 11.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) },
-                                    modifier = Modifier.weight(1f),
-                                    shape = RoundedCornerShape(8.dp)
-                                )
-                            }
                         }
                     }
                 }
@@ -253,11 +249,11 @@ fun DashboardScreen(
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                            Spacer(modifier = Modifier.height(6.dp))
+                            Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 "Tap + to search lyrics and curate 1 or 2 lines",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.outline
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -380,7 +376,7 @@ private fun TodayLyricLiveCard(
                 ) {
                     Text(
                         text = "No lyrics in rotation yet",
-                        color = Color(0xFF8E8E93),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Medium,
                         textAlign = TextAlign.Center
@@ -388,7 +384,7 @@ private fun TodayLyricLiveCard(
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "Tap + below to add your first song",
-                        color = Color(0xFF636366),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp,
                         textAlign = TextAlign.Center
                     )
@@ -418,7 +414,7 @@ private fun TodayLyricLiveCard(
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     if (dailyLyric != null) {
                         IconButton(
@@ -431,7 +427,7 @@ private fun TodayLyricLiveCard(
                             Icon(
                                 imageVector = if (isPinned) Icons.Default.Lock else Icons.Default.LockOpen,
                                 contentDescription = if (isPinned) "Unlock rotation" else "Lock lyric on widget",
-                                tint = if (isPinned) Color(0xFFFFB454) else cardActionTint,
+                                tint = if (isPinned) MaterialTheme.colorScheme.primary else cardActionTint,
                                 modifier = Modifier.size(18.dp)
                             )
                         }
@@ -547,11 +543,11 @@ private fun SongCurationCard(
                 }
 
                 Surface(
-                    shape = RoundedCornerShape(8.dp),
+                    shape = WidgyShapes.small,
                     color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
                 ) {
                     Text(
-                        text = if (song.isRandomPool) "Random Pool" else "${snippets.size} lines",
+                        text = if (song.isRandomPool) "Random pool" else "${snippets.size} lines",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -565,19 +561,19 @@ private fun SongCurationCard(
                     Icon(
                         Icons.Default.Delete,
                         contentDescription = "Delete Song",
-                        tint = MaterialTheme.colorScheme.outline
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
                 Icon(
                     if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.outline
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
             AnimatedVisibility(visible = expanded) {
-                Column(modifier = Modifier.padding(top = 10.dp)) {
+                Column(modifier = Modifier.padding(top = 8.dp)) {
                     if (song.isRandomPool) {
                         Text(
                             text = "Every day, a random 1 or 2 lines from this track will be pulled into the daily pool.",
@@ -628,7 +624,7 @@ private fun SnippetRow(
             fontSize = 13.sp,
             fontFamily = FontFamily.Serif,
             fontStyle = FontStyle.Italic,
-            color = if (snippet.isActive) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline,
+            color = if (snippet.isActive) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.weight(1f)
         )
         Switch(
@@ -640,7 +636,7 @@ private fun SnippetRow(
             Icon(
                 Icons.Default.Delete,
                 contentDescription = "Delete Line",
-                tint = MaterialTheme.colorScheme.outline
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }

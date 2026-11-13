@@ -111,9 +111,9 @@ fun ScrapbookScreen(
                 ) {
                     item {
                         Text(
-                            text = "Past Daily Featured Lyrics",
+                            text = "Past daily featured lyrics",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.outline,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(vertical = 4.dp)
                         )
                     }
