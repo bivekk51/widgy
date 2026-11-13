@@ -323,7 +323,7 @@ fun LyricsViewerScreen(
                                     "Tap 1 or 2 lines to curate your daily lyric snippet, or choose Random Pool below."
                                 },
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.outline,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(vertical = 8.dp)
                             )
                             if (state.selectionWarning != null) {
@@ -331,7 +331,7 @@ fun LyricsViewerScreen(
                                     text = state.selectionWarning ?: "",
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.error,
-                                    modifier = Modifier.padding(bottom = 6.dp)
+                                    modifier = Modifier.padding(bottom = 8.dp)
                                 )
                             }
                         }

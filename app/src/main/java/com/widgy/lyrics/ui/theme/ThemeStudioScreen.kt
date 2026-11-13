@@ -48,7 +48,6 @@ import androidx.compose.material.icons.outlined.UnfoldMore
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Slider
@@ -482,12 +481,6 @@ fun ThemeStudioScreen(
                     }
                 }
 
-                HorizontalDivider(
-                    color = colors.divider,
-                    thickness = 1.dp,
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                )
-
                 // DOCK CONTENT (Scrollable, Contextual)
                 Box(
                     modifier = Modifier
@@ -500,7 +493,7 @@ fun ThemeStudioScreen(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .verticalScroll(rememberScrollState())
-                                .padding(horizontal = 16.dp, vertical = 10.dp)
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
                         ) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -589,25 +582,19 @@ fun ThemeStudioScreen(
                     }
                 }
 
-                HorizontalDivider(
-                    color = colors.divider,
-                    thickness = 1.dp,
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                )
-
                 // BOTTOM ACTION AREA (Sticky, 48dp minimum targets)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 10.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     // Secondary Button: "Edit Lines" / "Done"
                     Button(
                         onClick = { isEditingLines = !isEditingLines },
                         modifier = Modifier.height(48.dp),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = WidgyShapes.medium,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = if (isEditingLines) colors.accentButtonBg else colors.chipBg,
                             contentColor = if (isEditingLines) colors.accentText else colors.textPrimary
@@ -643,7 +630,7 @@ fun ThemeStudioScreen(
                         },
                         modifier = Modifier
                             .size(48.dp)
-                            .clip(RoundedCornerShape(12.dp))
+                            .clip(WidgyShapes.medium)
                             .background(colors.chipBg)
                     ) {
                         Icon(
